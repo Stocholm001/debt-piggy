@@ -17,7 +17,10 @@
     })();
   </script>
   <title>กระปุกปลดหนี้</title>
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#FFE89A">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ปลดหนี้">
@@ -31,8 +34,8 @@
   <div id="app"></div>
   <noscript>ต้องเปิด JavaScript เพื่อใช้งานกระปุกปลดหนี้</noscript>
   <script>
-    // กันหน้าว่าง: ถ้าโค้ดแอปโหลดไม่สำเร็จ ให้แสดงข้อความพร้อมปุ่ม "โหลดใหม่"
-    // (Phase 4 จะเพิ่มการล้างแคชของ sw.js ก่อนรีเฟรชแบบ salary-calc)
+    // กันหน้าว่าง: ถ้าโค้ดแอปโหลดไม่สำเร็จ (เช่น เบราว์เซอร์ใช้ไฟล์เก่าในแคชปนกับไฟล์ใหม่)
+    // ให้แสดงข้อความพร้อมปุ่ม "โหลดใหม่" ที่ล้างแคชของไฟล์แอปก่อนรีเฟรช (แบบ salary-calc)
     (function () {
       function showLoadError() {
         if (window.__appStarted || document.getElementById('boot-fail')) return;
@@ -42,7 +45,24 @@
           '<main id="boot-fail"><h1>กระปุกปลดหนี้</h1>' +
           '<p>โหลดแอปไม่สำเร็จ กดโหลดใหม่อีกครั้ง</p>' +
           '<button type="button" id="boot-reload">โหลดใหม่</button></main>';
-        document.getElementById('boot-reload').onclick = function () { location.reload(); };
+        document.getElementById('boot-reload').onclick = hardReload;
+      }
+      function hardReload() {
+        var btn = document.getElementById('boot-reload');
+        btn.disabled = true;
+        // ล้างแคชของ sw.js แล้วโหลดไฟล์แอปทุกไฟล์ใหม่จากเซิร์ฟเวอร์ (ข้ามแคช) ก่อนรีเฟรช
+        var clearSw = 'caches' in window
+          ? caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })
+          : Promise.resolve();
+        clearSw
+          .then(function () { return fetch('sw.js', { cache: 'reload' }); })
+          .then(function (r) { return r.text(); })
+          .then(function (txt) {
+            var files = (txt.match(/'\.\/[^']+'/g) || []).map(function (s) { return s.slice(1, -1); });
+            return Promise.all(files.map(function (f) { return fetch(f, { cache: 'reload' }).catch(function () {}); }));
+          })
+          .catch(function () {})
+          .then(function () { location.reload(); });
       }
       window.addEventListener('error', function () { setTimeout(showLoadError, 0); });
       window.addEventListener('load', function () { setTimeout(showLoadError, 8000); });
