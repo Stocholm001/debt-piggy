@@ -344,3 +344,30 @@ export function yearSummary(debts, months, ceYear) {
     .map(({ debt, paid }) => ({ debt, paid }));
   return { months: rows, totalPaid, recordedCount, endRemaining, byDebt };
 }
+
+/**
+ * เดือนที่ก้อนนี้ถูกจ่ายจนเหลือ 0 (เดือนแรกที่ pay > 0 และ remainingAfter = 0) หรือ null
+ * ก้อนที่ปิดเพราะแก้ยอดตั้งต้นลดลง (ไม่มีเดือนที่จ่ายปิด) → null
+ */
+export function closedMonth(debt, months) {
+  for (const k of debtMonthKeys(debt, months)) {
+    if (pay(debt, months, k) > 0 && remainingAfter(debt, months, k) === 0) return k;
+  }
+  return null;
+}
+
+/** จำนวนก้อนที่ปิดในปี ค.ศ. นั้น (ตามเดือนที่จ่ายปิด) */
+export function closedInYear(debts, months, ceYear) {
+  const prefix = `${ceYear}-`;
+  return debts.filter((d) => closedMonth(d, months)?.startsWith(prefix)).length;
+}
+
+/** ปีใน <select> สรุปปี (ค.ศ.): ปีแรกที่มีหนี้/เอกสารเดือน … ปีปัจจุบัน + 1 */
+export function yearOptions(debts, months, currentYear) {
+  let first = currentYear;
+  for (const d of debts) if (d.startMonth) first = Math.min(first, Number(d.startMonth.slice(0, 4)));
+  for (const k of Object.keys(months)) first = Math.min(first, Number(k.slice(0, 4)));
+  const years = [];
+  for (let y = first; y <= currentYear + 1; y++) years.push(y);
+  return years;
+}

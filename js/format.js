@@ -108,3 +108,66 @@ export function moneyInputValue(satang) {
   if (!satang) return '';
   return `${Math.trunc(satang / 100)}.${String(satang % 100).padStart(2, '0')}`;
 }
+
+/**
+ * จัดข้อความในช่องเงินขณะพิมพ์ (ยกจาก salary-calc): "12345.6" → "12,345.6"
+ * เก็บเฉพาะตัวเลขกับจุดทศนิยมตัวแรก (ทศนิยมไม่เกิน 2 ตำแหน่ง) แล้วบอกตำแหน่งเคอร์เซอร์ใหม่
+ * @returns {{ value: string, caret: number }}
+ */
+export function formatMoneyTyping(raw, caret = raw.length) {
+  let seenDot = false;
+  let fracDigits = 0;
+  let kept = '';
+  let keptBeforeCaret = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    let ok = false;
+    if (c >= '0' && c <= '9') {
+      ok = !seenDot || fracDigits < 2;
+      if (ok && seenDot) fracDigits++;
+    } else if (c === '.' && !seenDot) {
+      ok = true;
+      seenDot = true;
+    }
+    if (!ok) continue;
+    kept += c;
+    if (i < caret) keptBeforeCaret++;
+  }
+  const dot = kept.indexOf('.');
+  let int = dot === -1 ? kept : kept.slice(0, dot);
+  const frac = dot === -1 ? '' : kept.slice(dot);
+  // ตัด 0 นำหน้า ("007" → "7") แต่เหลือ "0" ไว้ก่อนจุด
+  const lead = int.length - int.replace(/^0+(?=\d)/, '').length;
+  int = int.slice(lead);
+  keptBeforeCaret = Math.max(0, keptBeforeCaret - lead);
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const value = grouped + frac;
+
+  let n = 0;
+  let pos = 0;
+  while (pos < value.length && n < keptBeforeCaret) {
+    if (value[pos] !== ',') n++;
+    pos++;
+  }
+  return { value, caret: pos };
+}
+
+/** สตางค์ → ข้อความในช่องกรอกแบบมี comma: 400000 → "4,000.00", 0 → "" */
+export const moneyFieldValue = (satang) => (satang ? formatMoney(satang) : '');
+
+/** bp → ข้อความในช่อง %: 4000 → "40", 1250 → "12.5", null → "" */
+export const pctFieldValue = (bp) => (bp == null ? '' : formatBp(bp).replace('%', ''));
+
+/**
+ * ข้อความให้กำลังใจใต้วงแหวน (SPEC ข้อ 12 เรื่องที่ 7)
+ * @param progressTenths % ที่ปลดแล้ว หน่วย 0.1% (null = ยังไม่มีหนี้ → ไม่แสดง)
+ */
+export function encouragement(progressTenths) {
+  if (progressTenths == null) return '';
+  if (progressTenths >= 1000) return 'ปลดหนี้ครบทุกก้อนแล้ว เก่งมาก';
+  if (progressTenths >= 750) return 'อีกนิดเดียวก็ปลดหนี้หมดแล้ว';
+  if (progressTenths >= 500) return 'เกินครึ่งทางแล้ว ไปต่ออีกนิด';
+  if (progressTenths >= 250) return 'มาได้ดี หยอดกระปุกต่อทุกเดือน';
+  if (progressTenths > 0) return 'เริ่มแล้ว ค่อย ๆ ปลดทีละก้อน';
+  return 'เริ่มจากก้อนดอกแพงที่สุดก่อน';
+}
