@@ -19,6 +19,13 @@
   <title>กระปุกปลดหนี้</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#FFE89A">
+  <script>
+    // ใส่ธีมที่เลือกไว้ก่อนวาดหน้า กันสีกระพริบ (ค่าเต็มตั้งใน js/theme.js)
+    try {
+      var th = localStorage.getItem('debt-piggy:theme');
+      if (th && th !== 'yellow' && /^[a-z-]+$/.test(th)) document.documentElement.dataset.theme = th;
+    } catch (e) { /* ignore */ }
+  </script>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -29,6 +36,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/themes.css">
 </head>
 <body>
   <div id="app"></div>

@@ -49,3 +49,7 @@ export function newId(prefix) {
     ?? Math.random().toString(36).slice(2, 14);
   return `${prefix}_${rand}`;
 }
+
+/** สีของหมวดงบ: หมวดในตัวใช้สีของธีม (design/THEMES.md) หมวดที่เพิ่มเองใช้สีที่เก็บไว้ */
+const BUILTIN_CAT_VAR = { debt: 'var(--accent)', saving: 'var(--paid)', living: 'var(--bar)', other: 'var(--pig-dark)' };
+export const catColor = (c) => BUILTIN_CAT_VAR[c.key] ?? c.color;

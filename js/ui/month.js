@@ -8,7 +8,7 @@ import { monthLabel, monthShortLabel, prevMonth, nextMonth } from '../dates.js';
 import { formatMoney, formatBp, parseMoney, moneyFieldValue, HIDDEN } from '../format.js';
 import { html, mount, $, $$, bindMoneyInputs } from './dom.js';
 import { icons } from './icons.js';
-import { header, bindEye, rankBadge, debtSubline, money } from './common.js';
+import { header, bindEye, rankBadge, debtSubline, money, catColor } from './common.js';
 import { openSalarySheet } from './salary-sheet.js';
 
 const STATUS_CHIP = {
@@ -47,12 +47,12 @@ function salaryCard(app, key, month, cats) {
             </div>`}
       </div>
       <div class="alloc-bar" aria-hidden="true">
-        ${s.items.filter((x) => x.widthBp > 0).map((x) => html`<span style="width:${x.widthBp / 100}%;background:${x.color}"></span>`)}
+        ${s.items.filter((x) => x.widthBp > 0).map((x) => html`<span style="width:${x.widthBp / 100}%;background:${catColor(x)}"></span>`)}
       </div>
       <ul class="legend">
         ${s.items.map((x) => html`
           <li class="legend__item">
-            <span class="dot" style="background:${x.color}" aria-hidden="true"></span>
+            <span class="dot" style="background:${catColor(x)}" aria-hidden="true"></span>
             <span class="legend__name">${x.label}</span>
             <span class="legend__pct">${formatBp(x.bp)}</span>
           </li>`)}

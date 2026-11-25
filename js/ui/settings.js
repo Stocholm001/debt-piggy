@@ -10,6 +10,10 @@ import { avatarInner, squarePhoto } from './avatar.js';
 import { IMAGE_ACCEPT, DecoderLoadError } from './image-load.js';
 import { icons } from './icons.js';
 import { openProfileSheet, openChangePin } from './account-sheets.js';
+import { openThemeSheet } from './theme-sheet.js';
+import { THEMES, getTheme } from '../theme.js';
+
+const themeLabel = () => THEMES.find((x) => x.id === getTheme())?.label ?? '';
 
 export function renderSettings(view, app) {
   const acc = app.account;
@@ -50,6 +54,7 @@ export function renderSettings(view, app) {
 
     <section class="card card--list">
       ${row('app-title', 'ชื่อแอป', acc.appTitle)}
+      ${row('theme', 'ธีมสี', themeLabel())}
       <div class="set-row">
         <span class="set-row__text" id="hide-label">
           <span class="set-row__title">ซ่อนตัวเลขตอนเปิดแอป</span>
@@ -103,6 +108,11 @@ export function renderSettings(view, app) {
     if (v == null || v === acc.appTitle) return;
     await app.saveAccount({ appTitle: v }).catch(() => {});
     document.title = v;
+    app.rerender();
+  });
+
+  $('#theme', view).addEventListener('click', async () => {
+    await openThemeSheet();
     app.rerender();
   });
 

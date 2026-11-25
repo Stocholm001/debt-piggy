@@ -53,3 +53,20 @@ test('ไอคอนเป็น PNG ขนาดตรงตามชื่อ
   assert.deepEqual(size('icons/apple-touch-icon.png'), [180, 180]);
   assert.deepEqual(size('icons/favicon-32.png'), [32, 32]);
 });
+
+test('ธีม: ทุกชุดใน theme.js มีใน themes.css และตั้งค่า/จำได้', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { THEMES, DEFAULT_THEME, setTheme, initTheme, getTheme } = await import('../js/theme.js');
+  const css = readFileSync(new URL('../css/themes.css', import.meta.url), 'utf8');
+  assert.equal(THEMES.length, 11);
+  for (const th of THEMES) {
+    if (th.id === DEFAULT_THEME) continue;
+    assert.ok(css.includes(`[data-theme="${th.id}"]`), th.id);
+  }
+  const mem = new Map();
+  const storage = { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => mem.set(k, v) };
+  assert.equal(setTheme('midnight', storage), 'midnight');
+  assert.equal(initTheme(storage), 'midnight');
+  assert.equal(setTheme('nope', storage), DEFAULT_THEME);
+  assert.equal(getTheme(), DEFAULT_THEME);
+});

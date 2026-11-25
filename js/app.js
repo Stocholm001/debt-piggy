@@ -17,6 +17,7 @@ import { greetName } from './profile.js';
 import { renderLogin } from './ui/login.js';
 import { createAppLock } from './ui/lock-screen.js';
 import { initPwa } from './pwa.js';
+import { initTheme } from './theme.js';
 import { currentMonthKey, parseMonthKey } from './dates.js';
 import { resolveMonth } from './calc.js';
 import { sampleData } from './sample-data.js';
@@ -361,6 +362,7 @@ function useLocalMode() {
 }
 
 async function start() {
+  initTheme();
   initPwa();
   if (useLocalMode()) {
     app.testMode = true;

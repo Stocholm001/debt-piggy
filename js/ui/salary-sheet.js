@@ -9,7 +9,7 @@ import {
 } from '../format.js';
 import { html, mount, $, $$, openSheet, bindMoneyInputs, choose, confirmDialog } from './dom.js';
 import { icons } from './icons.js';
-import { newId } from './common.js';
+import { newId, catColor } from './common.js';
 
 /**
  * @param key            เดือน YYYY-MM
@@ -86,7 +86,7 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
       const mode = modeOf(c.key);
       return html`
         <li class="alloc-row" data-key="${c.key}">
-          <span class="dot" style="background:${c.color}" aria-hidden="true"></span>
+          <span class="dot" style="background:${catColor(c)}" aria-hidden="true"></span>
           <span class="alloc-row__name">
             <span class="alloc-row__label-line">
               <span class="alloc-row__label" id="lbl-${c.key}">${c.label}</span>
@@ -112,7 +112,7 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
   function renderTotal() {
     const s = allocSummary(draft.salary, draft.bp, draft.cats);
     mount($('#alloc-bar', dlg), s.items.filter((x) => x.widthBp > 0).map((x) => html`
-      <span style="width:${x.widthBp / 100}%;background:${x.color}"></span>`));
+      <span style="width:${x.widthBp / 100}%;background:${catColor(x)}"></span>`));
     const el = $('#alloc-total', dlg);
     el.textContent = s.over
       ? `รวมเกิน 100% อยู่ ${formatBp(s.overBp)}`
