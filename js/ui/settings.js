@@ -1,9 +1,11 @@
 // ui/settings.js — หน้า "ตั้งค่า" (D08, SPEC ข้อ 3.6) แบบเดียวกับ salary-calc F07
-// ติดตั้งลงหน้าจอ และสำรองข้อมูล (CSV) ทำใน Phase 4
 
 import { fullName, formatBirthday } from '../profile.js';
 import { LOCK_AFTER_MS } from '../applock.js';
-import { html, mount, $, askText, confirmDialog, toast } from './dom.js';
+import { backupCsv, backupFilename } from '../csv.js';
+import { installState, promptInstall, onInstallChange } from '../pwa.js';
+import { appVersion } from '../version.js';
+import { html, mount, $, askText, confirmDialog, toast, downloadText } from './dom.js';
 import { icons } from './icons.js';
 import { openProfileSheet, openChangePin } from './account-sheets.js';
 
@@ -64,10 +66,19 @@ export function renderSettings(view, app) {
         </div>` : ''}
     </section>
 
+    <section class="card card--list">
+      ${online ? row('change-pin', 'เปลี่ยน PIN', 'ต้องกรอก PIN เดิมก่อน') : ''}
+      <button type="button" class="set-row" id="install">
+        <span class="set-row__text">
+          <span class="set-row__title">ติดตั้งลงหน้าจอ</span>
+          <span class="set-row__sub" id="install-sub">ใช้เหมือนแอปบนมือถือ</span>
+        </span>
+        ${icons.chevronRight(22)}
+      </button>
+      ${row('backup', 'สำรองข้อมูล (CSV)', 'หนี้และยอดชำระทุกเดือน')}
+    </section>
+
     ${online ? html`
-      <section class="card card--list">
-        ${row('change-pin', 'เปลี่ยน PIN', 'ต้องกรอก PIN เดิมก่อน')}
-      </section>
       <section class="card card--list">
         ${row('logout', 'ออกจากระบบ', '', { cls: 'set-row--danger', end: icons.chevronRight(22) })}
       </section>
@@ -76,7 +87,8 @@ export function renderSettings(view, app) {
         <h2 class="card__title card__title--pad">โหมดทดสอบ</h2>
         ${row('load-sample', 'ใส่ข้อมูลตัวอย่าง', 'หนี้ 9 ก้อน ยอดจ่าย เม.ย.–พ.ย. 2569 (แทนข้อมูลเดิมในเครื่องนี้)')}
         ${row('clear-all', 'ล้างข้อมูลทั้งหมด', 'ลบหนี้ ยอดชำระ เงินเดือน และการตั้งค่าในเครื่องนี้', { cls: 'set-row--danger', end: icons.trash() })}
-      </section>`}`);
+      </section>`}
+    <p class="app-version">เวอร์ชัน ${appVersion()}</p>`);
 
   $('#app-title', view).addEventListener('click', async () => {
     const v = await askText({
@@ -104,6 +116,51 @@ export function renderSettings(view, app) {
   });
 
   $('#change-pin', view)?.addEventListener('click', () => openChangePin(acc.username));
+
+  // ติดตั้งลงหน้าจอ: สถานะเปลี่ยนได้ทีหลัง (beforeinstallprompt มาช้า / ติดตั้งเสร็จ)
+  const installBtn = $('#install', view);
+  const installSub = $('#install-sub', view);
+  const syncInstall = () => {
+    const st = installState();
+    installBtn.disabled = st === 'installed';
+    installSub.textContent = {
+      installed: 'ติดตั้งแล้ว',
+      ios: 'iPhone/iPad: กดเพื่อดูวิธีเพิ่มไปยังหน้าจอโฮม',
+      unsupported: 'เปิดด้วย Chrome หรือ Safari บนมือถือเพื่อติดตั้ง',
+    }[st] ?? 'ใช้เหมือนแอปบนมือถือ';
+  };
+  syncInstall();
+  const offInstall = onInstallChange(syncInstall);
+  installBtn.addEventListener('click', async () => {
+    const st = installState();
+    if (st === 'prompt') {
+      if (await promptInstall()) toast('ติดตั้งแล้ว');
+      syncInstall();
+    } else if (st === 'ios') {
+      await confirmDialog({
+        title: 'ติดตั้งบน iPhone/iPad',
+        message: [
+          '1. เปิดหน้านี้ใน Safari',
+          '2. กดปุ่มแชร์ (สี่เหลี่ยมมีลูกศรชี้ขึ้น) ที่แถบด้านล่าง',
+          '3. เลือก "เพิ่มไปยังหน้าจอโฮม" แล้วกด "เพิ่ม"',
+        ].join('\n'),
+        okLabel: 'เข้าใจแล้ว',
+      });
+    } else if (st === 'unsupported') {
+      toast('เบราว์เซอร์นี้ติดตั้งไม่ได้ ลองเปิดด้วย Chrome หรือ Safari');
+    }
+  });
+
+  $('#backup', view).addEventListener('click', () => {
+    try {
+      const file = backupFilename();
+      downloadText(file, backupCsv(app.debts, app.months, app.currentKey));
+      toast(`บันทึกไฟล์ ${file} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast('ส่งออกไม่สำเร็จ ลองใหม่อีกครั้ง');
+    }
+  });
 
   $('#logout', view)?.addEventListener('click', async () => {
     const ok = await confirmDialog({
@@ -140,5 +197,5 @@ export function renderSettings(view, app) {
     toast('ล้างข้อมูลแล้ว');
   });
 
-  return undefined;
+  return () => offInstall();
 }

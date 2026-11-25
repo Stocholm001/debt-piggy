@@ -125,6 +125,20 @@ export function toast(text, ms = 2200) {
   setTimeout(() => { el.classList.remove('toast--show'); setTimeout(() => el.remove(), 300); }, ms);
 }
 
+/** ให้เบราว์เซอร์ดาวน์โหลดข้อความเป็นไฟล์ (ยกจาก salary-calc) */
+export function downloadText(filename, text, type = 'text/csv;charset=utf-8') {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  // iOS Safari ต้องให้ URL อยู่สักพักก่อนเริ่มดาวน์โหลด
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** ใส่ comma ในช่องเงินตามที่พิมพ์อยู่ โดยคงตำแหน่งเคอร์เซอร์ */
 export function applyMoneyTyping(el) {
   if (el.readOnly) return;

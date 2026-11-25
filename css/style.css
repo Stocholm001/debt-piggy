@@ -519,6 +519,8 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .profile--btn .profile__text { flex: 1; }
 .readonly-value { font-weight: 600; font-size: 1.1rem; padding: 4px 0; }
 .set-row__badge { color: var(--green); font-weight: 600; white-space: nowrap; }
+.set-row:disabled { opacity: .6; cursor: default; }
+.app-version { font-size: .75rem; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 
 #boot-fail { padding: 48px 24px; text-align: center; }
 #boot-fail button {

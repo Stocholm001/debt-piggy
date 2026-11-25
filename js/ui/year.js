@@ -1,10 +1,10 @@
 // ui/year.js — หน้า "สรุปทั้งปี" (D07, SPEC ข้อ 3.5) แนวเดียวกับ salary-calc F06
-// ปุ่ม "ส่งออก CSV" ทำใน Phase 4
 
 import { yearSummary, yearOptions, closedInYear, isClosed } from '../calc.js';
 import { toBE, monthShortLabel } from '../dates.js';
-import { html, mount, $ } from './dom.js';
-import { pig } from './icons.js';
+import { yearCsv, yearCsvFilename } from '../csv.js';
+import { html, mount, $, downloadText, toast } from './dom.js';
+import { pig, icons } from './icons.js';
 import { money } from './common.js';
 
 export function renderYear(view, app, year) {
@@ -82,7 +82,23 @@ export function renderYear(view, app, year) {
             </span>
             <span class="by-debt__amt">${money(app, paid)}</span>
           </li>`)}
-      </ul>` : html`<p class="empty">ยังไม่มียอดชำระในปีนี้</p>`}`);
+      </ul>` : html`<p class="empty">ยังไม่มียอดชำระในปีนี้</p>`}
+
+    <button type="button" class="btn btn--dark btn--block" id="csv"
+            ${y.recordedCount ? '' : html`disabled aria-describedby="csv-note"`}>
+      ${icons.download()} ส่งออก CSV ปี ${be}</button>
+    ${y.recordedCount ? '' : html`<p class="hint" id="csv-note">ยังไม่มีเดือนที่บันทึกในปีนี้</p>`}`);
+
+  $('#csv', view).addEventListener('click', () => {
+    try {
+      const file = yearCsvFilename(year);
+      downloadText(file, yearCsv(app.debts, app.months, year));
+      toast(`บันทึกไฟล์ ${file} แล้ว`);
+    } catch (err) {
+      console.error(err);
+      toast('ส่งออกไม่สำเร็จ ลองใหม่อีกครั้ง');
+    }
+  });
 
   $('#y-select', view).addEventListener('change', (e) => app.navigate(`#/year/${e.target.value}`));
   return undefined;
