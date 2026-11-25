@@ -445,11 +445,80 @@ dialog::backdrop { background: rgba(74, 53, 0, .45); }
 .save-status.is-visible { opacity: .92; }
 .save-status.is-error { background: var(--warn-ink); }
 
-/* ---------- หน้าเปิดไม่สำเร็จ ---------- */
-.login { min-height: 100dvh; padding: 32px 24px; display: flex; flex-direction: column; gap: 20px; }
-.login__hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 10vh; }
+/* ---------- ล็อกอิน (D01/D02), ล็อกแอป (D09) ---------- */
+.boot { text-align: center; padding: 40vh 16px 0; color: var(--muted); }
+.login {
+  min-height: 100dvh; padding: 32px 24px calc(24px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 20px;
+}
+.login__hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding-top: 4vh; }
+.login__hero .pig { width: clamp(100px, 36vw, 150px); height: auto; }
+.login__hero--small { padding-top: 0; gap: 6px; }
+.login__hero--small .pig { width: clamp(72px, 22vw, 96px); }
+.login--pin .login__hero .pig { width: clamp(80px, 26vw, 110px); }
 .login__title { font-size: 1.9rem; font-weight: 600; }
 .login__sub { color: var(--muted); }
+.login__pin-title { font-size: 1.3rem; font-weight: 600; overflow-wrap: anywhere; }
+.login__form { display: flex; flex-direction: column; gap: 16px; }
+.login__recent { display: flex; flex-direction: column; gap: 4px; }
+.login__chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.name-chip {
+  display: inline-flex; align-items: stretch; border-radius: 999px; border: 2px solid var(--line);
+  background: var(--card); overflow: hidden;
+}
+.name-chip__name {
+  min-height: var(--tap); padding: 6px 6px 6px 18px; border: 0; background: none; font-weight: 500;
+}
+.name-chip__x { min-width: var(--tap); display: grid; place-items: center; border: 0; background: none; color: var(--muted); }
+.name-chip__name:focus-visible, .name-chip__x:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; border-radius: 999px; }
+.login__foot { margin-top: auto; text-align: center; font-size: .9rem; color: var(--muted); }
+.login__msg { text-align: center; color: var(--warn-ink); min-height: 1.45em; }
+.btn--rect { border-radius: 999px; min-height: 56px; font-size: 1.1rem; }
+.link-back {
+  align-self: center; min-height: var(--tap); border: 0; background: none; color: var(--accent);
+  text-decoration: underline; font-weight: 500; padding: 0 12px;
+}
+input[type="date"].input { appearance: none; -webkit-appearance: none; text-align: left; }
+input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
+
+.pin { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+.pin__dots { display: flex; gap: 16px; }
+.pin__dot { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--ink); }
+.pin__dot.is-on { background: var(--ink); }
+.pin__dots.is-shake { animation: pin-shake .35s; }
+@keyframes pin-shake {
+  0%, 100% { transform: none; }
+  20%, 60% { transform: translateX(-10px); }
+  40%, 80% { transform: translateX(10px); }
+}
+.pin__pad { width: 100%; max-width: 340px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pin__key {
+  min-height: 60px; border-radius: 20px; border: 2px solid var(--line); background: var(--card);
+  font-size: 1.6rem; font-weight: 600; box-shadow: 0 4px 0 var(--line);
+  display: grid; place-items: center;
+}
+.pin__key:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
+.pin__key--del { background: var(--line); border-color: var(--line); }
+.pin__key:disabled { opacity: .6; }
+.sheet .pin { padding: 8px 0; }
+.sheet__title--center { text-align: center; }
+
+/* เต็มจอทึบ ไม่ให้เห็นข้อมูลด้านหลัง */
+.applock {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: var(--bg); overflow-y: auto;
+}
+.applock::backdrop { background: var(--bg); }
+.applock .login { max-width: 480px; margin: 0 auto; }
+.applock__icon {
+  width: 88px; height: 88px; border-radius: 50%; background: var(--card-hi); color: var(--accent);
+  display: grid; place-items: center;
+}
+
+.profile--btn { width: 100%; border: 0; text-align: left; color: inherit; }
+.profile--btn .profile__text { flex: 1; }
+.readonly-value { font-weight: 600; font-size: 1.1rem; padding: 4px 0; }
+.set-row__badge { color: var(--green); font-weight: 600; white-space: nowrap; }
 
 #boot-fail { padding: 48px 24px; text-align: center; }
 #boot-fail button {

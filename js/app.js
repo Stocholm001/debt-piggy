@@ -7,9 +7,15 @@
 //   #/settings        ตั้งค่า (D08)
 // YYYY เป็น ค.ศ. เสมอ
 //
-// Phase 2: ยังไม่มีล็อกอิน ใช้ store/local.js (โหมดทดสอบ) ทุกครั้ง
+// มีค่าใน firebase-config.js → ล็อกอินด้วยชื่อ + PIN แล้วใช้ store/firestore.js
+// ไม่มีค่า → "โหมดทดสอบ" ใช้ store/local.js ไม่มีหน้าล็อกอิน
 
 import { createLocalStore } from './store/local.js';
+import { createFirestoreStore } from './store/firestore.js';
+import { isConfigured, configProblem, initFirebase, currentUser, signOut } from './auth.js';
+import { greetName } from './profile.js';
+import { renderLogin } from './ui/login.js';
+import { createAppLock } from './ui/lock-screen.js';
 import { currentMonthKey, parseMonthKey } from './dates.js';
 import { resolveMonth } from './calc.js';
 import { sampleData } from './sample-data.js';
@@ -156,6 +162,20 @@ const app = {
   },
 
   flushSaves: () => flushSaves(),
+
+  // ---------- บัญชีผู้ใช้ (Firebase) ----------
+
+  async saveProfile(value) {
+    app.account = { ...app.account, ...value };
+    await runSave(() => app.store.saveProfile(value));
+  },
+
+  async logout() {
+    await flushSaves().catch(() => {});
+    await signOut();
+    location.hash = '';
+    location.reload();
+  },
 };
 
 // ---------- บันทึกอัตโนมัติ ----------
@@ -278,6 +298,8 @@ async function route({ keepScroll = false } = {}) {
 
 // ---------- เริ่มแอป ----------
 
+let lastLoad = 0;
+
 async function reload() {
   const [account, debts, months] = await Promise.all([
     app.store.getAccount(), app.store.listDebts(), app.store.listMonths(),
@@ -285,34 +307,114 @@ async function reload() {
   app.account = account;
   app.debts = debts;
   app.months = months;
+  lastLoad = Date.now();
   document.title = account.appTitle;
   await route({ keepScroll: true });
 }
 
-async function start() {
-  app.store = createLocalStore(window.localStorage);
-  app.account = await app.store.getAccount();
-  app.hidden = app.account.settings.hideOnOpen;
+let started = false;
 
-  // โหมดทดสอบ: เปิด ?demo=1 ตอนยังไม่มีหนี้ จะใส่ข้อมูลตัวอย่างให้
-  const params = new URLSearchParams(location.search);
-  if (params.get('demo') === '1' && (await app.store.listDebts()).length === 0) {
-    await app.store.replaceAll(sampleData());
+/** เริ่มส่วนแอปหลังรู้แล้วว่าใช้ store ไหน */
+async function startApp(store) {
+  app.store = store;
+  app.account = await store.getAccount();
+  app.hidden = app.account.settings.hideOnOpen;
+  if (!started) {
+    started = true;
+    window.addEventListener('hashchange', () => route());
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        flushSaves().catch(() => {});
+      } else if (!app.testMode && Date.now() - lastLoad > RELOAD_AFTER_MS && timers.size === 0
+                 && !document.querySelector('dialog[open]')) {
+        // กลับมาที่แอปหลังไปนานแล้ว: โหลดข้อมูลใหม่ (เผื่อแก้จากเครื่องอื่น)
+        reload().catch((err) => console.error(err));
+      }
+    });
+    window.addEventListener('pagehide', () => { flushSaves().catch(() => {}); });
+  }
+  await reload();
+}
+
+const RELOAD_AFTER_MS = 60 * 1000;
+
+function showFatal(text) {
+  mount($('#app'), html`
+    <main class="login"><div class="login__hero"><h1 class="login__title">กระปุกปลดหนี้</h1>
+    <p class="login__sub">${text}</p></div>
+    <button type="button" class="btn btn--primary btn--block" id="retry">ลองใหม่</button></main>`);
+  $('#retry').addEventListener('click', () => location.reload());
+}
+
+/** โหมดทดสอบ: ยังไม่ได้ใส่ค่าใน firebase-config.js หรือเปิด ?local=1 บนเครื่องตัวเอง (localhost เท่านั้น) */
+function useLocalMode() {
+  if (!isConfigured()) return true;
+  const isDevHost = ['localhost', '127.0.0.1'].includes(location.hostname);
+  return isDevHost && new URLSearchParams(location.search).get('local') === '1';
+}
+
+async function start() {
+  if (useLocalMode()) {
+    app.testMode = true;
+    const store = createLocalStore(window.localStorage);
+    // เปิด ?demo=1 ตอนยังไม่มีหนี้ จะใส่ข้อมูลตัวอย่างให้
+    if (new URLSearchParams(location.search).get('demo') === '1' && (await store.listDebts()).length === 0) {
+      await store.replaceAll(sampleData());
+    }
+    await startApp(store);
+    return;
   }
 
-  window.addEventListener('hashchange', () => route());
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushSaves().catch(() => {});
-  });
-  window.addEventListener('pagehide', () => { flushSaves().catch(() => {}); });
-  await reload();
+  app.testMode = false;
+  const problem = configProblem();
+  if (problem) { showFatal(problem); return; }
+
+  mount($('#app'), html`<p class="boot" role="status">กำลังโหลด…</p>`);
+  let fb;
+  let user;
+  try {
+    fb = await initFirebase();
+    user = await currentUser();
+  } catch (err) {
+    console.error(err);
+    showFatal('โหลดแอปไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    return;
+  }
+
+  /** @param restored true = เปิดแอปด้วย session เดิม (ไม่ได้เพิ่งกรอก PIN) → ล็อกก่อนถ้าไม่ได้ใช้นานพอ */
+  const enter = async (restored) => {
+    const uid = fb.auth.currentUser.uid;
+    try {
+      const store = createFirestoreStore(fb, uid);
+      const account = await store.getAccount();
+      const lock = createAppLock({
+        uid,
+        username: account.username,
+        name: greetName(account) || account.username,
+        onLogout: () => app.logout(),
+      });
+      // ล็อกก่อนวาดหน้าแรก ข้อมูลจะได้ไม่โผล่ให้เห็นก่อนใส่ PIN
+      if (restored && lock.needsLock()) {
+        mount($('#app'), html``);
+        await lock.lock();
+      } else {
+        lock.markActive();
+      }
+      lock.start();
+      await startApp(store);
+    } catch (err) {
+      console.error(err);
+      showFatal(err?.code === 'permission-denied'
+        ? 'ไม่มีสิทธิ์อ่านข้อมูล (ตรวจ firestore.rules ใน Firebase console)'
+        : 'โหลดข้อมูลไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    }
+  };
+
+  if (user) await enter(true);
+  else renderLogin($('#app'), { onSignedIn: () => enter(false) });
 }
 
 start().catch((err) => {
   console.error(err);
-  mount($('#app'), html`
-    <main class="login"><div class="login__hero"><h1 class="login__title">กระปุกปลดหนี้</h1>
-    <p class="login__sub">เปิดแอปไม่สำเร็จ</p></div>
-    <button type="button" class="btn btn--primary btn--block" id="retry">ลองใหม่</button></main>`);
-  $('#retry').addEventListener('click', () => location.reload());
+  showFatal('เปิดแอปไม่สำเร็จ');
 });
