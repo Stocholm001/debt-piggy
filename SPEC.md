@@ -1,7 +1,8 @@
 # SPEC — กระปุกปลดหนี้ (repo `debt-piggy` · shinchan-debt เวอร์ชันใหม่)
 
 > เอกสารนี้คือ requirement ทั้งหมดของแอปกระปุกปลดหนี้ ซึ่งทำใหม่แทน shinchan-debt ใน **repo ใหม่** `Stocholm001/debt-piggy` ใช้เป็นแหล่งอ้างอิงหลักตอนเขียนโค้ด
-> แอปเดิม (ไว้อ่านอ้างอิงเท่านั้น ห้ามแก้): https://github.com/Stocholm001/shinchan-debt (ไฟล์ `index.html` ไฟล์เดียว + `sw.js` + `manifest.json`) ยังเปิดใช้อยู่ที่ https://stocholm001.github.io/shinchan-debt/ จนกว่าทุกคนจะย้ายบัญชี
+> แอปเดิม (ไว้อ่านอ้างอิงเท่านั้น ห้ามแก้): https://github.com/Stocholm001/shinchan-debt (ไฟล์ `index.html` ไฟล์เดียว + `sw.js` + `manifest.json`) ยังเปิดใช้อยู่ที่ https://stocholm001.github.io/shinchan-debt/
+> **แอปใหม่เริ่มใหม่หมด (ตกลงแล้ว 2026-11-25):** Firebase project ใหม่ ผู้ใช้ใหม่ทั้งหมด ไม่ย้ายบัญชีหรือข้อมูลจากแอปเดิม ทุกคนสมัครและเพิ่มหนี้เองใหม่
 > หน้าตาและโครงโค้ดให้ทำตามแอป **salary-calc** (https://github.com/Stocholm001/salary-calc) ให้มากที่สุด
 > ถ้าเจอจุดที่ spec ไม่ชัด หรือติดเรื่องในข้อ 12 "เรื่องที่ต้องตัดสินใจ" ให้ถามเจ้าของโปรเจกต์ก่อน อย่าเดาเอง
 
@@ -80,7 +81,6 @@
 
 ### 2.3 ของใหม่ที่เพิ่ม
 - ชื่อ + PIN 6 หลัก, ฟอร์มสมัคร, ล็อก PIN ผิด 3 ครั้ง, ล็อกแอปเมื่อไม่ใช้ 5 นาที, เปลี่ยน PIN (ยกมาจาก salary-calc)
-- **ย้ายบัญชีเดิม** (PIN 4 หลัก) มาระบบใหม่โดยข้อมูลไม่หาย (ข้อ 7.2)
 - หนี้มี "เริ่มนับตั้งแต่เดือน" (`startMonth`) เพิ่มหนี้ใหม่กลางปีได้ถูกต้อง
 - เดือนที่ยังไม่บันทึกใช้เงินเดือน/สัดส่วนงบจากเดือนล่าสุดก่อนหน้าเป็นค่าเริ่มต้น
 - สรุปทั้งปี, CSV, ซ่อนตัวเลข, หน้าตั้งค่า
@@ -107,7 +107,7 @@
 
 | รหัส | หน้าจอ | สิ่งที่ต้องมี | แบบอ้างอิง |
 |---|---|---|---|
-| D01 | ล็อกอิน: ชื่อ / สมัครใช้งาน | เหมือน salary-calc F01 (รูปหมู, ช่องชื่อ, "เข้าสู่ระบบ", "สมัครใช้งาน", ชื่อที่ใช้ล่าสุด) + ทางย้ายบัญชีเดิม (ข้อ 7.2) | salary-calc F01 |
+| D01 | ล็อกอิน: ชื่อ / สมัครใช้งาน | เหมือน salary-calc F01 (รูปหมู, ช่องชื่อ, "เข้าสู่ระบบ", "สมัครใช้งาน", ชื่อที่ใช้ล่าสุด) | salary-calc F01 |
 | D02 | ล็อกอิน: PIN | เหมือน salary-calc F02 (จุด 6 จุด, แป้น 3×4) | salary-calc F02 |
 | D03 | ภาพรวม | ดูข้อ 3.1 | `Main.dc.html` |
 | D04 | เดือนนี้ | ดูข้อ 3.2 | `M01.dc.html` |
@@ -230,7 +230,6 @@
 ให้ `months` คือเดือนที่ `startMonth ≤ m` เรียงตามเวลา
 - `paidBefore(debt, M)` = ผลรวมยอดชำระของก้อนนี้ทุกเดือนที่ `< M`
 - `opening(debt, M)` = `max(0, initial − paidBefore(debt, M))`
-  - ถ้าเดือน M มี `openingOverride[debtId]` (ข้อมูลเก่าจาก `initialOverride`) ให้ใช้ค่านั้นแทน
   - เดือนที่ `< startMonth` ไม่มีก้อนนี้
 - `pay(debt, M)` ตอนบันทึกต้อง clamp เป็น `0 ≤ pay ≤ opening(debt, M)`
 - `remainingAfter(debt, M)` = `opening − pay`
@@ -291,8 +290,7 @@
   rateBp: 1500,
   due: "ทุกวันที่ 19",        // ข้อความ ไม่บังคับ
   startMonth: "2026-04",      // YYYY-MM (ค.ศ.)
-  createdAt: <timestamp>,
-  legacyId: 8                 // id เดิม (มีเฉพาะข้อมูลที่ย้ายมา)
+  createdAt: <timestamp>
 }
 
 // เดือน 1 เดือน
@@ -300,24 +298,20 @@
   salarySatang: 3000000,
   allocBp: { debt: 4000, saving: 1000, living: 4000, other: 1000, cat_xxx: 0 },
   payments: { dbt_xxx: 400000, ... },        // สตางค์
-  openingOverride: { dbt_xxx: 1234500 },      // มีเฉพาะข้อมูลที่ย้ายมาจาก initialOverride
   updatedAt: <timestamp>
 }
 ```
 
-### 6.2 Firestore (โปรเจกต์ `shinchan-debt-2026` เดิม ดูข้อ 12 เรื่องที่ 1)
+### 6.2 Firestore (โปรเจกต์ใหม่ ดูข้อ 12 เรื่องที่ 1)
 ```
 usernames/{username}               { uid }
 accounts/{uid}                     { displayName, username, firstName, lastName, birthday,
-                                     appTitle, createdAt, migratedFrom?,
+                                     appTitle, createdAt,
                                      settings: { hideOnOpen },
                                      allocCats: [{ key, label, color, builtIn }] }
 accounts/{uid}/debts/{debtId}      { ...หนี้ 1 ก้อน }
 accounts/{uid}/months/{YYYY-MM}    { ...เดือน 1 เดือน }
-
-users/{legacyName}                 ← ข้อมูลเดิม (อ่านอย่างเดียวช่วงย้ายบัญชี ดูข้อ 7.2)
 ```
-- ใช้ collection ใหม่ชื่อ `accounts` จะได้ไม่ปนกับ `users` เดิมที่ใช้ชื่อเป็น id
 - ทำ `store/local.js` (Phase 2) กับ `store/firestore.js` (Phase 3) ด้วย interface เดียวกัน
 
 ### 6.3 กฎของเดือน
@@ -340,38 +334,12 @@ users/{legacyName}                 ← ข้อมูลเดิม (อ่า
 ### 7.1 ระบบใหม่ (เหมือน salary-calc ข้อ 7 ทุกอย่าง)
 - ให้ยก `auth.js`, `username.js`, `lockout.js`, `applock.js`, `sanitize.js`, `ui/pinpad.js`, `ui/lock-screen.js` และหน้าสมัครมาจาก salary-calc แล้วปรับชื่อแอป
 - ชื่อ → normalize เป็น `username` → อีเมลภายใน `u_<hex UTF-8>@<AUTH_EMAIL_DOMAIN>` → PIN 6 หลักเป็นรหัสผ่าน
-- บัญชีใหม่: ชื่อผู้ใช้ภาษาอังกฤษตามกฎของ salary-calc ส่วนบัญชีเก่าที่เป็นชื่อไทยยังเข้าได้
+- ชื่อผู้ใช้ภาษาอังกฤษตามกฎของ salary-calc
 - PIN ผิด 3 ครั้งล็อก 1 นาที, ล็อกแอปเมื่อไม่ใช้ 5 นาที, เปลี่ยน PIN ด้วย `reauthenticateWithCredential` + `updatePassword`
 - **ห้ามเก็บ PIN หรือ session ชื่อผู้ใช้ใน localStorage/Firestore** (localStorage เก็บได้แค่ "ชื่อที่ใช้ล่าสุด" และเวลาใช้งานล่าสุด)
 
-### 7.2 ย้ายบัญชีเดิม (PIN 4 หลัก → 6 หลัก)
-ผู้ใช้เดิมมีข้อมูลอยู่ที่ `users/{legacyName}` = `{ displayName, pin, createdAt, state }`
-
-1. ผู้ใช้กด "เข้าสู่ระบบ" ด้วยชื่อเดิม → ไม่พบ `usernames/{username}` → ลองอ่าน `users/{username}`
-2. ถ้ามีและยังไม่มี `migratedTo` → ขึ้นหน้า "อัปเกรดบัญชี":
-   - "แอปเวอร์ชันใหม่ใช้ PIN 6 หลัก กรอก PIN เดิม 4 หลักเพื่อยืนยัน"
-   - แป้น PIN แสดง 4 จุด และเทียบกับ `pin` เดิมในเครื่อง (วิธีเดียวกับแอปเดิม ใช้ชั่วคราวช่วงย้ายเท่านั้น)
-   - ผิดครบ 3 ครั้งล็อก 1 นาที
-3. ถูก → ตั้ง PIN ใหม่ 6 หลัก + ยืนยัน → `createUserWithEmailAndPassword`
-4. แปลง `state` (ข้อ 7.3) แล้วเขียน `usernames/{username}`, `accounts/{uid}`, `debts/*`, `months/*` ใน batch เดียว
-5. อัปเดต `users/{legacyName}` เป็น `{ migratedTo: uid }` และลบฟิลด์ `pin` (เก็บ `state` ไว้ก่อนเป็นสำรอง)
-6. ขึ้น "อัปเกรดเรียบร้อย ใช้ PIN 6 หลักใหม่ได้เลย" แล้วเข้าแอป
-7. ถ้าขั้น 4 หรือ 5 พัง: ห้ามทิ้งข้อมูลครึ่ง ๆ กลาง ๆ ให้ลองใหม่ได้ และถ้า auth สร้างแล้วแต่เขียนข้อมูลไม่ผ่าน การล็อกอินครั้งถัดไปต้องทำขั้น 4–5 ต่อ
-8. ชื่อที่มี `migratedTo` แล้ว → ใช้ระบบใหม่ตามข้อ 7.1
-
-### 7.3 แปลงข้อมูลเดิม (`migrate.js` ฟังก์ชันล้วน ต้องมีเทสต์)
-| เดิม | ใหม่ |
-|---|---|
-| `state.months["04"]` … `["12"]` | `months/2026-04` … `2026-12` (แอปเดิมเป็นปี 2026 ทั้งหมด) |
-| `months[m].salary` (บาท float) | `salarySatang` |
-| `months[m].alloc[key]` (% float) | `allocBp[key] = round(pct × 100)` |
-| `months[m].payments[id]` | `payments[dbtId]` สตางค์ (`id` เดิม → `dbtId` ใหม่ จับคู่ด้วย `legacyId`) |
-| `months[m].initialOverride[id]` | `openingOverride[dbtId]` |
-| `debts[]` `{id, creditor, account, initial, rate, due, priority}` | `debts/{dbtId}` `{creditor, account, initialSatang, rateBp, due, startMonth: "2026-04", legacyId: id}` (ไม่ย้าย `priority` เพราะคำนวณใหม่) |
-| `customCats[]` | `allocCats` (builtIn: false) |
-| `appTitle` | `appTitle` |
-| `nextId`, `preAprOverride` | ทิ้ง |
-| เดือนที่ salary = 0 และไม่มี payments และ alloc เป็นค่าเริ่มต้น | ไม่ต้องสร้างเอกสารเดือน |
+### 7.2 ~~ย้ายบัญชีเดิม~~ / 7.3 ~~แปลงข้อมูลเดิม~~ — ยกเลิก (2026-11-25)
+แอปใหม่เริ่มใหม่หมด ไม่มีการย้ายบัญชีหรือข้อมูลจากแอปเดิม จึงไม่มีหน้า "อัปเกรดบัญชี" และไม่มี `migrate.js`
 
 ---
 
@@ -391,19 +359,9 @@ service cloud.firestore {
     match /accounts/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
-    // ข้อมูลเดิม: ช่วงย้ายบัญชีเท่านั้น ย้ายครบแล้วให้ลบ block นี้และลบ collection users
-    match /users/{legacyName} {
-      allow get: if true;
-      allow list, create, delete: if false;
-      allow update: if request.auth != null
-                    && request.resource.data.migratedTo == request.auth.uid
-                    && !('pin' in request.resource.data)
-                    && !('migratedTo' in resource.data);
-    }
   }
 }
 ```
-> rules ชั่วคราวของ `users` ยังเปิดให้อ่าน PIN เดิมได้ ซึ่งก็คือสภาพเดียวกับตอนนี้ จึงไม่ได้แย่ลง แต่ควรปิดให้เร็วที่สุดหลังทุกคนย้ายแล้ว (Phase 6)
 
 ---
 
@@ -457,21 +415,9 @@ service cloud.firestore {
 | 19 | ไม่มีหนี้เลย | progress `—`, totals 0 ไม่ error |
 | 20 | สรุปปี 2569 | จ่ายทั้งปี 91,697.85, บันทึก 8 จาก 12 เดือน |
 
-### 11.2 `migrate.js`
-| # | กรณี | ผลที่ต้องได้ |
-|---|---|---|
-| 1 | months key `"04"` | `2026-04` |
-| 2 | initial 17040.16, rate 33 | 1704016 สตางค์, 3300 bp |
-| 3 | alloc 40 / 12.5 | 4000 / 1250 bp |
-| 4 | payments `{ "8": 800 }` | `payments[<dbtId ของ legacyId 8>] = 80000` |
-| 5 | customCats 1 หมวด | อยู่ใน allocCats, builtIn false |
-| 6 | เดือนที่ว่างทั้งหมด | ไม่สร้างเอกสาร |
-| 7 | state ว่าง / ไม่มี debts | ได้บัญชีว่าง ไม่ error |
-| 8 | มี `initialOverride` | กลายเป็น `openingOverride` และ opening ของเดือนนั้นตรงกับค่าเดิม |
+### 11.2 ~~`migrate.js`~~ — ยกเลิก (ไม่ย้ายข้อมูลเดิม)
 
 ### 11.3 Manual test checklist (บนมือถือจริง)
-- [ ] บัญชีเดิม: กรอกชื่อเดิม → PIN 4 หลักผิด 1 ครั้ง → ถูก → ตั้ง PIN 6 หลัก → เห็นหนี้และยอดชำระครบเหมือนแอปเดิม (เทียบยอดคงเหลือรวมกับแอปเดิม)
-- [ ] บัญชีที่ย้ายแล้วใช้ PIN 4 หลักเดิมไม่ได้อีก
 - [ ] สมัครชื่อใหม่ → ตั้ง PIN → ยืนยันไม่ตรง → ตั้งใหม่ → เข้าได้
 - [ ] PIN ผิด 3 ครั้ง → ล็อก 1 นาที, ไม่ใช้แอป 5 นาที → ต้องกรอก PIN
 - [ ] แก้ `localStorage` แล้วเข้าบัญชีคนอื่นไม่ได้, ผู้ใช้ A อ่าน `accounts` ของ B ไม่ได้ (Rules Playground)
@@ -495,14 +441,14 @@ service cloud.firestore {
 
 | # | เรื่อง | ข้อเสนอใน spec นี้ | ทางเลือกอื่น |
 |---|---|---|---|
-| 1 | Firebase project | **ตกลงแล้ว 2026-11-25: สร้างโปรเจกต์ใหม่** แล้วย้ายข้อมูลข้ามโปรเจกต์เอง (ข้อ 6.2, 7.2, 13 ที่อ้าง `shinchan-debt-2026` ต้องปรับตอน Phase 3) | ~~ใช้ `shinchan-debt-2026` เดิม~~ |
-| 2 | PIN 4 → 6 หลัก | **ตกลงแล้ว 2026-11-25:** บังคับตั้ง PIN 6 หลักตอนย้ายบัญชี (Firebase Auth ต้องการรหัสผ่านอย่างน้อย 6 ตัว) | – |
-| 3 | ชื่อแอป | **ตกลงแล้ว 2026-11-25:** "กระปุกปลดหนี้" repo `debt-piggy` (แก้ชื่อที่แสดงได้ในตั้งค่า, บัญชีที่ย้ายมาใช้ `appTitle` เดิม) | – |
+| 1 | Firebase project | **ตกลงแล้ว 2026-11-25: สร้างโปรเจกต์ใหม่ เริ่มใหม่หมด** ผู้ใช้ใหม่ทั้งหมด ไม่ย้ายบัญชีหรือข้อมูลจากแอปเดิม | ~~ใช้ `shinchan-debt-2026` เดิม~~ |
+| 2 | PIN 4 → 6 หลัก | ไม่เกี่ยวแล้ว (ไม่มีการย้ายบัญชี ทุกคนตั้ง PIN 6 หลักตอนสมัคร) | – |
+| 3 | ชื่อแอป | **ตกลงแล้ว 2026-11-25:** "กระปุกปลดหนี้" repo `debt-piggy` (แก้ชื่อที่แสดงได้ในตั้งค่า) | – |
 | 4 | ล็อกแก้ไขหนี้ 30 วินาที | **ตกลงแล้ว 2026-11-25: ตัดออก** เพราะแก้ผ่าน bottom sheet และลบต้องยืนยันอยู่แล้ว และมีล็อกแอปด้วย PIN | ~~เก็บไว้เป็นสวิตช์ในตั้งค่า~~ |
 | 5 | "เปิดใช้ใหม่" ก้อนที่ปิดแล้ว | **ตกลงแล้ว 2026-11-25: แบบเดิม** = ล้างยอดชำระทุกเดือนของก้อนนั้น (ต้องยืนยันใน dialog ของแอป) | ~~ไม่ลบประวัติ ให้แก้ยอดตั้งต้นเพิ่มขึ้นแทน~~ |
 | 6 | แถบสรุป ต้นเดือน/ชำระ/คงเหลือ ในหน้าเดือนนี้ | **ตกลงแล้ว 2026-11-25: ใส่เป็นบรรทัดเล็กใต้การ์ดเงินเดือน** | ~~ไม่มี~~ |
 | 7 | ข้อความให้กำลังใจตาม % | **ตกลงแล้ว 2026-11-25: ใส่บรรทัดเล็กใต้วงแหวน** | ~~ไม่มี~~ |
-| 8 | ปิดเส้นทางย้ายบัญชีเดิม | เมื่อเจ้าของยืนยันว่าทุกคนย้ายแล้ว (Phase 6) | กำหนดวันตายตัว |
+| 8 | ปิดเส้นทางย้ายบัญชีเดิม | ไม่เกี่ยวแล้ว (ไม่มีการย้ายบัญชี) | – |
 
 ---
 
@@ -519,7 +465,6 @@ debt-piggy/
 ├─ js/
 │  ├─ app.js            # เริ่มแอป, routing 4 แท็บ
 │  ├─ calc.js           # คำนวณล้วน ๆ ← เทสต์ข้อ 11.1
-│  ├─ migrate.js        # แปลงข้อมูลเดิม ← เทสต์ข้อ 11.2
 │  ├─ dates.js          # ชื่อเดือนไทย, พ.ศ./ค.ศ., เลื่อนเดือน
 │  ├─ format.js         # เงิน/%, แปลงข้อความเป็นสตางค์, ซ่อนตัวเลข
 │  ├─ auth.js, username.js, lockout.js, applock.js, sanitize.js, version.js, pwa.js   # ยกจาก salary-calc
@@ -527,12 +472,12 @@ debt-piggy/
 │  ├─ csv.js
 │  └─ ui/               # login.js, pinpad.js, lock-screen.js, overview.js, month.js,
 │                       # debt-sheet.js, salary-sheet.js, year.js, settings.js
-├─ firebase-config.js   # ใช้ค่าของโปรเจกต์ shinchan-debt-2026 เดิม
+├─ firebase-config.js   # ค่าของ Firebase project ใหม่
 ├─ firestore.rules
 ├─ manifest.json, sw.js
 ├─ icons/               # ไอคอนหมูกระปุก (ยกจาก salary-calc หรือทำสีใหม่)
 ├─ design/              # รูป Main / M01 ที่ export จากแคนวาส
-├─ tests/calc.test.js, tests/migrate.test.js
+├─ tests/calc.test.js, tests/dates-format.test.js
 └─ SPEC.md
 ```
 
@@ -541,18 +486,15 @@ debt-piggy/
 ## 14. ลำดับการทำงาน (ทำทีละเฟส จบแต่ละเฟสแล้วหยุดให้เจ้าของทดสอบก่อน)
 
 0. **Setup**: ใน repo ใหม่ `debt-piggy` สร้างโครงไฟล์ตามข้อ 13 และ `.gitignore` อ่านโค้ดแอปเดิมจาก repo `shinchan-debt` เพื่ออ้างอิงเท่านั้น (ห้ามก๊อปรูปตัวการ์ตูนหรือ CSS เดิมมา และห้ามแก้ repo เดิม)
-1. **calc.js + migrate.js + tests**: ทำ `dates.js`, `format.js`, `calc.js`, `migrate.js` และให้เทสต์ข้อ 11.1–11.2 ผ่านครบ
+1. **calc.js + tests**: ทำ `dates.js`, `format.js`, `calc.js` และให้เทสต์ข้อ 11.1 ผ่านครบ
 2. **UI + localStorage**: ทำ D03–D08 ด้วย `store/local.js` (ยังไม่ต้องล็อกอิน) ใส่ข้อมูลตัวอย่างข้อ 1 ได้ด้วยปุ่มในโหมดทดสอบ แล้วทดสอบบนมือถือ
-3. **Firebase**: ทำ auth (D01, D02, D09), `store/firestore.js`, การย้ายบัญชีข้อ 7.2 และ `firestore.rules` ข้อ 8 ทดสอบด้วยบัญชีทดลองที่สร้างในรูปแบบเดิมก่อน ห้ามใช้บัญชีจริง
+3. **Firebase**: ทำ auth (D01, D02, D09), `store/firestore.js` และ `firestore.rules` ข้อ 8 ทดสอบด้วยบัญชีทดลองก่อน
 4. **ฟีเจอร์เสริม**: สรุปปี, CSV, ซ่อนตัวเลข, PWA, ตั้งค่า, ล็อกแอป
-5. **Deploy**: เปิด GitHub Pages ของ `debt-piggy` (branch `main`, root) → https://stocholm001.github.io/debt-piggy/ แล้วให้เจ้าของย้ายบัญชีตัวเองก่อนเป็นคนแรก และเทียบยอดกับแอปเดิม (แอปเดิมยังเปิดใช้คู่กันได้)
-6. **ปิดของเก่า**: เมื่อเจ้าของยืนยันว่าทุกบัญชีย้ายแล้ว ให้ลบ block `users` ใน rules และลบโค้ดย้ายบัญชี จากนั้นเจ้าของลบ collection `users` ใน console และเปลี่ยนหน้าแอปเดิมให้เป็นหน้าแจ้ง "ย้ายไปที่ …/debt-piggy/ แล้ว" (แก้ใน repo เดิมเอง)
-
-> **สำคัญ:** แอปเดิมเขียน `users/{ชื่อ}` โดยไม่มี auth ดังนั้นตั้งแต่ Publish rules ข้อ 8 (Phase 5) **แอปเดิมจะบันทึกไม่ได้ทุกบัญชี** แต่ยังเปิดดูได้ และข้อมูลไม่หาย ให้ deploy แอปใหม่ก่อนแล้วค่อย Publish rules และแจ้งทุกคนให้ย้ายมาแอปใหม่พร้อมกัน
+5. **Deploy**: เปิด GitHub Pages ของ `debt-piggy` (branch `main`, root) → https://stocholm001.github.io/debt-piggy/ แล้วให้เจ้าของสมัครและทดลองใช้เป็นคนแรก (แอปเดิมยังเปิดใช้คู่กันได้ เพราะอยู่คนละ Firebase project)
+6. **ปิดของเก่า**: เมื่อเจ้าของพร้อม เปลี่ยนหน้าแอปเดิมให้เป็นหน้าแจ้ง "ย้ายไปที่ …/debt-piggy/ แล้ว" (แก้ใน repo เดิมเอง) แอปใหม่ไม่ต้องแก้อะไร
 
 ### งานใน Firebase console ที่เจ้าของต้องทำเอง (ก่อน Phase 3)
-1. เปิดโปรเจกต์ `shinchan-debt-2026` → **จดหรือก๊อป rules ปัจจุบันเก็บไว้ก่อน**
+1. สร้าง Firebase project ใหม่ → เพิ่ม Web app → ก๊อป config มาให้ใส่ใน `firebase-config.js` → สร้าง Cloud Firestore
 2. Authentication → Get started → Sign-in method → เปิด **Email/Password**
 3. Authentication → Settings → Authorized domains → เพิ่ม `stocholm001.github.io`
-4. ก่อน deploy (Phase 5): สำรองข้อมูลเดิม เช่น เปิดแอปเดิมแล้วก๊อปข้อมูลแต่ละบัญชีเก็บไว้ หรือใช้ Firestore export ถ้าเปิด billing ไว้
-5. Firestore → Rules → วาง `firestore.rules` ข้อ 8 → Publish (ทำพร้อม deploy Phase 5)
+4. Firestore → Rules → วาง `firestore.rules` ข้อ 8 → Publish
