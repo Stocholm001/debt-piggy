@@ -1,0 +1,21 @@
+rules_version = '2';
+// firestore.rules — กระปุกปลดหนี้ (SPEC ข้อ 8)
+// วางใน Firebase console → Firestore Database → Rules → Publish
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ชื่อผู้ใช้ → uid: อ่านทีละชื่อได้ (ใช้ตรวจตอนล็อกอิน/สมัคร) แต่ list ทั้งหมดไม่ได้
+    // สร้างได้ครั้งเดียวโดยเจ้าของ uid นั้น แก้/ลบไม่ได้ (กันแย่งชื่อ)
+    match /usernames/{name} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['uid'])
+                    && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+    // ข้อมูลของแต่ละคน: อ่าน/เขียนได้เฉพาะเจ้าของ
+    match /accounts/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
