@@ -88,7 +88,12 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
         <li class="alloc-row" data-key="${c.key}">
           <span class="dot" style="background:${c.color}" aria-hidden="true"></span>
           <span class="alloc-row__name">
-            <span class="alloc-row__label" id="lbl-${c.key}">${c.label}</span>
+            <span class="alloc-row__label-line">
+              <span class="alloc-row__label" id="lbl-${c.key}">${c.label}</span>
+              ${c.builtIn ? '' : html`
+                <button type="button" class="alloc-row__del" data-del="${c.key}"
+                        aria-label="ลบหมวด ${c.label}">${icons.close(16)}</button>`}
+            </span>
             <span class="alloc-row__other" id="other-${c.key}">${otherText(c.key)}</span>
           </span>
           <span class="unit-seg" role="group" aria-label="หน่วยของ ${c.label}">
@@ -99,9 +104,6 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
           </span>
           <input class="input alloc-input" data-key="${c.key}" data-mode="${mode}" inputmode="decimal"
                  autocomplete="off" aria-labelledby="lbl-${c.key}" value="${fieldValue(c.key)}" placeholder="0">
-          ${c.builtIn ? '' : html`
-            <button type="button" class="icon-btn icon-btn--sm alloc-row__del" data-del="${c.key}"
-                    aria-label="ลบหมวด ${c.label}">${icons.close(18)}</button>`}
         </li>`;
     }));
     renderTotal();

@@ -386,7 +386,7 @@ dialog::backdrop { background: rgba(74, 53, 0, .45); }
 .sheet__form { padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16px; }
 .sheet__grip { width: 44px; height: 5px; border-radius: 999px; background: var(--bar); margin: 0 auto; }
 .sheet__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.sheet__title { font-size: 1.35rem; font-weight: 600; }
+.sheet__title { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .sheet__actions {
   position: sticky; bottom: 0; background: var(--bg); padding-top: 8px; margin-top: 8px;
   display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
@@ -396,18 +396,23 @@ dialog::backdrop { background: rgba(74, 53, 0, .45); }
 
 .alloc-list { background: var(--card); border-radius: var(--r-card); padding: 4px 14px; }
 .alloc-row {
-  display: grid; grid-template-columns: auto 1fr auto minmax(64px, 96px) auto; gap: 8px; align-items: center;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(80px, 108px); gap: 8px; align-items: center;
   padding: 10px 0; border-bottom: 1px solid var(--line);
 }
 .alloc-row:last-child { border-bottom: 0; }
 .alloc-row__name { display: flex; flex-direction: column; min-width: 0; }
 .alloc-row__label { font-weight: 500; overflow-wrap: anywhere; }
-.alloc-row__other { font-size: .8rem; color: var(--muted); white-space: nowrap; }
-.alloc-row .input { min-height: 48px; padding: 8px 10px; text-align: right; font-weight: 600; }
-.alloc-row:not(:has(.alloc-row__del)) { grid-template-columns: auto 1fr auto minmax(64px, 96px); }
+.alloc-row__other { font-size: .78rem; color: var(--muted); line-height: 1.3; }
+.alloc-row .input { min-height: 48px; padding: 8px 8px; text-align: right; font-weight: 600; font-size: .95rem; }
+.alloc-row__label-line { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.alloc-row__del {
+  flex: none; width: 36px; height: 36px; margin: -6px 0; border: 0; border-radius: 50%;
+  background: transparent; color: var(--muted); display: grid; place-items: center;
+}
+.alloc-row__del:hover { background: var(--warn-bg); color: var(--warn-ink); }
 
 .unit-seg { display: inline-grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 2px; background: var(--line); border-radius: 999px; }
-.unit-seg__btn { min-width: var(--tap); min-height: var(--tap); border: 0; border-radius: 999px; background: transparent; font-weight: 600; padding: 0; }
+.unit-seg__btn { min-width: 40px; min-height: var(--tap); border: 0; border-radius: 999px; background: transparent; font-weight: 600; padding: 0; }
 .unit-seg__btn[aria-pressed="true"] { background: var(--card); }
 .unit-seg__btn:disabled { opacity: .4; }
 
@@ -463,8 +468,9 @@ dialog::backdrop { background: rgba(74, 53, 0, .45); }
   .salary-card__top { flex-wrap: wrap; }
   .legend { grid-template-columns: 1fr; }
   .row-debt { grid-template-columns: 1fr; }
-  .alloc-row { grid-template-columns: auto 1fr minmax(56px, 80px) auto; }
+  .alloc-row { grid-template-columns: auto minmax(0, 1fr) minmax(84px, 110px); }
   .alloc-row .unit-seg { grid-column: 2; grid-row: 2; justify-self: start; }
+  .alloc-row .input { grid-column: 3; grid-row: 1 / 3; }
   .head__title { font-size: 1.5rem; }
   .month-pick { gap: 6px; }
   .month-pick .icon-btn { width: var(--tap); height: var(--tap); }
