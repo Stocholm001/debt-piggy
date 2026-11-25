@@ -24,6 +24,7 @@ export const icons = {
   trash: () => svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', 20),
   download: () => svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', 20),
   share: () => svg('<path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', 20),
+  camera: () => svg('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>', 16),
   refresh: () => svg('<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>', 20),
 };
 

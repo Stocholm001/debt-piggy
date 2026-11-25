@@ -166,6 +166,12 @@ const app = {
 
   // ---------- บัญชีผู้ใช้ (Firebase) ----------
 
+  /** รูปโปรไฟล์ (data URL) หรือ null = ลบรูป */
+  async savePhoto(photo) {
+    app.account = { ...app.account, photo };
+    await runSave(() => app.store.saveAccount({ photo }));
+  },
+
   async saveProfile(value) {
     app.account = { ...app.account, ...value };
     await runSave(() => app.store.saveProfile(value));

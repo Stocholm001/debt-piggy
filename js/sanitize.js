@@ -95,5 +95,13 @@ export function sanitizeAccount(raw) {
     appTitle: cleanText(a.appTitle, 40) || DEFAULT_APP_TITLE,
     settings: { ...DEFAULT_SETTINGS, hideOnOpen: s.hideOnOpen === true },
     allocCats: sanitizeCats(a.allocCats),
+    photo: sanitizePhoto(a.photo),
   };
+}
+
+/** รูปโปรไฟล์: data URL ของรูป (JPEG 256×256 จากหน้าตั้งค่า) ไม่ใช่รูป/ใหญ่เกิน → null */
+export const PHOTO_MAX_CHARS = 300_000;
+export function sanitizePhoto(v) {
+  return typeof v === 'string' && v.length <= PHOTO_MAX_CHARS && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)
+    ? v : null;
 }

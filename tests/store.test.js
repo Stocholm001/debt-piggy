@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createLocalStore, createMemoryStorage } from '../js/store/local.js';
-import { sanitizeDebt, sanitizeMonth, sanitizeAccount, DEFAULT_APP_TITLE } from '../js/sanitize.js';
+import { sanitizeDebt, sanitizeMonth, sanitizeAccount, sanitizePhoto, PHOTO_MAX_CHARS, DEFAULT_APP_TITLE } from '../js/sanitize.js';
 import { sampleData } from '../js/sample-data.js';
 import { totals, closedMonth, closedInYear, yearOptions } from '../js/calc.js';
 import { formatMoneyTyping, encouragement, moneyFieldValue, pctFieldValue } from '../js/format.js';
@@ -128,4 +128,15 @@ test('ข้อความให้กำลังใจตาม %', () => {
   assert.equal(encouragement(0), 'เริ่มจากก้อนดอกแพงที่สุดก่อน');
   assert.equal(encouragement(335), 'มาได้ดี หยอดกระปุกต่อทุกเดือน');
   assert.equal(encouragement(1000), 'ปลดหนี้ครบทุกก้อนแล้ว เก่งมาก');
+});
+
+test('sanitizePhoto: รับเฉพาะ data URL ของรูป ไม่เกินขนาด', () => {
+  const ok = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+  assert.equal(sanitizePhoto(ok), ok);
+  assert.equal(sanitizeAccount({ photo: ok }).photo, ok);
+  assert.equal(sanitizeAccount({}).photo, null);
+  assert.equal(sanitizePhoto('javascript:alert(1)'), null);
+  assert.equal(sanitizePhoto('data:text/html;base64,PHNjcmlwdD4='), null);
+  assert.equal(sanitizePhoto('data:image/jpeg;base64,"onerror="x'), null);
+  assert.equal(sanitizePhoto('data:image/jpeg;base64,' + 'A'.repeat(PHOTO_MAX_CHARS)), null);
 });

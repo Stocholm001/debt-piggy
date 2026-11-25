@@ -6,6 +6,8 @@ import { backupCsv, backupFilename } from '../csv.js';
 import { installState, promptInstall, onInstallChange } from '../pwa.js';
 import { appVersion } from '../version.js';
 import { html, mount, $, askText, confirmDialog, toast, downloadText } from './dom.js';
+import { avatarInner, squarePhoto } from './avatar.js';
+import { IMAGE_ACCEPT, DecoderLoadError } from './image-load.js';
 import { icons } from './icons.js';
 import { openProfileSheet, openChangePin } from './account-sheets.js';
 
@@ -14,7 +16,6 @@ export function renderSettings(view, app) {
   const hide = acc.settings.hideOnOpen;
   const online = !app.testMode;
   const name = online ? fullName(acc) : 'โหมดทดสอบ';
-  const initial = [...(online ? (acc.firstName || acc.displayName || acc.username || '?') : 'ท')][0];
 
   const row = (id, title, sub, { cls = '', end = icons.chevronRight(22) } = {}) => html`
     <button type="button" class="set-row ${cls}" id="${id}">
@@ -28,23 +29,24 @@ export function renderSettings(view, app) {
   mount(view, html`
     <header class="head"><h1 class="head__title">ตั้งค่า</h1></header>
 
-    ${online ? html`
-      <button type="button" class="profile profile--btn" id="profile">
-        <span class="profile__avatar" aria-hidden="true">${initial}</span>
-        <span class="profile__text">
+    <section class="profile">
+      <button type="button" class="profile__avatar" id="avatar" aria-label="เปลี่ยนรูปโปรไฟล์">
+        <span id="avatar-img">${avatarInner(acc)}</span>
+        <span class="profile__cam" aria-hidden="true">${icons.camera()}</span>
+      </button>
+      <input type="file" accept="${IMAGE_ACCEPT}" id="photo-file" hidden>
+      ${online ? html`
+        <button type="button" class="profile__text profile__text--btn" id="profile">
           <span class="profile__name">${name}</span>
           <span class="profile__sub">@${acc.username}${acc.birthday ? ` · วันเกิด ${formatBirthday(acc.birthday)}` : ''}</span>
           <span class="profile__sub">ล็อกอินอยู่ในเครื่องนี้ · แตะเพื่อดูโปรไฟล์</span>
-        </span>
-        ${icons.chevronRight(22)}
-      </button>` : html`
-      <section class="profile">
-        <span class="profile__avatar" aria-hidden="true">${initial}</span>
+        </button>` : html`
         <span class="profile__text">
           <span class="profile__name">${name}</span>
           <span class="profile__sub">ยังไม่ได้เชื่อม Firebase · ข้อมูลอยู่ในเครื่องนี้เท่านั้น</span>
-        </span>
-      </section>`}
+        </span>`}
+    </section>
+    <button type="button" class="profile__remove" id="photo-remove" ${acc.photo ? '' : html`hidden`}>ลบรูปโปรไฟล์</button>
 
     <section class="card card--list">
       ${row('app-title', 'ชื่อแอป', acc.appTitle)}
@@ -113,6 +115,44 @@ export function renderSettings(view, app) {
   $('#profile', view)?.addEventListener('click', async () => {
     const value = await openProfileSheet(app.account, (v) => app.saveProfile(v));
     if (value) { toast('บันทึกข้อมูลแล้ว'); app.rerender(); }
+  });
+
+  // รูปโปรไฟล์: กดวงกลม → เลือกรูป ย่อเหลือ 256×256 แล้วเก็บในเอกสารบัญชี
+  const fileEl = $('#photo-file', view);
+  const setPhoto = async (dataUrl) => {
+    await app.savePhoto(dataUrl);
+    mount($('#avatar-img', view), avatarInner(app.account));
+    $('#photo-remove', view).hidden = !dataUrl;
+  };
+  // ต้องเปิดตัวเลือกไฟล์ใน handler ของการกดโดยตรง (Safari ไม่ยอมเปิดถ้ามี await คั่น)
+  $('#avatar', view).addEventListener('click', () => {
+    fileEl.value = '';
+    fileEl.click();
+  });
+  $('#photo-remove', view).addEventListener('click', async () => {
+    const ok = await confirmDialog({ title: 'ลบรูปโปรไฟล์?', okLabel: 'ลบรูป', tone: 'danger' });
+    if (!ok) return;
+    try { await setPhoto(null); toast('ลบรูปแล้ว'); } catch (err) { console.error(err); toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+  });
+  fileEl.addEventListener('change', async () => {
+    const file = fileEl.files?.[0];
+    if (!file) return;
+    const avatar = $('#avatar', view);
+    avatar.setAttribute('aria-busy', 'true');
+    toast('กำลังเปิดรูป…', 1500);
+    let dataUrl;
+    try {
+      dataUrl = await squarePhoto(file, 256);
+    } catch (err) {
+      console.error(err);
+      toast(err instanceof DecoderLoadError
+        ? 'รูปแบบนี้ต้องต่ออินเทอร์เน็ตเพื่อแปลงไฟล์ ลองใหม่อีกครั้ง'
+        : 'เปิดรูปนี้ไม่ได้ ลองเลือกรูปอื่น', 3500);
+      return;
+    } finally {
+      avatar.removeAttribute('aria-busy');
+    }
+    try { await setPhoto(dataUrl); toast('บันทึกรูปแล้ว'); } catch (err) { console.error(err); toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); }
   });
 
   $('#change-pin', view)?.addEventListener('click', () => openChangePin(acc.username));
