@@ -387,21 +387,28 @@ async function start() {
     try {
       const store = createFirestoreStore(fb, uid);
       const account = await store.getAccount();
+      let ready = false;
       const lock = createAppLock({
         uid,
         username: account.username,
         name: greetName(account) || account.username,
         onLogout: () => app.logout(),
+        // ล็อกระหว่างใช้งาน: บันทึกงานค้าง แล้วล้างหน้าจอด้านหลัง ข้อมูลจะไม่ค้างอยู่ในหน้า
+        onLock: () => {
+          flushSaves().catch(() => {});
+          mount($('#app'), html``);
+        },
+        onUnlock: () => { if (ready) route({ keepScroll: false }); },
       });
       // ล็อกก่อนวาดหน้าแรก ข้อมูลจะได้ไม่โผล่ให้เห็นก่อนใส่ PIN
       if (restored && lock.needsLock()) {
-        mount($('#app'), html``);
         await lock.lock();
       } else {
         lock.markActive();
       }
       lock.start();
       await startApp(store);
+      ready = true;
     } catch (err) {
       console.error(err);
       showFatal(err?.code === 'permission-denied'

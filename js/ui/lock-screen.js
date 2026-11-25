@@ -23,9 +23,13 @@ const lockIcon = () => html`
  *   uid, username, name,          // name = ชื่อที่ใช้บนหน้าล็อก
  *   storage = localStorage,
  *   onLogout: async () => void,
+ *   onLock: () => void,           // ก่อนแสดงหน้าล็อก: ล้างหน้าจอด้านหลัง (ไม่ให้ข้อมูลค้างใน DOM)
+ *   onUnlock: () => void,         // ปลดล็อกแล้ว: วาดหน้าใหม่
  * }
  */
-export function createAppLock({ uid, username, name, storage = globalThis.localStorage, onLogout }) {
+export function createAppLock({
+  uid, username, name, storage = globalThis.localStorage, onLogout, onLock = () => {}, onUnlock = () => {},
+}) {
   let locked = false;
   let unlockWaiters = [];
   let lastWrite = 0;
@@ -47,6 +51,7 @@ export function createAppLock({ uid, username, name, storage = globalThis.localS
     const done = new Promise((resolve) => unlockWaiters.push(resolve));
     if (locked) return done;
     locked = true;
+    onLock();
     showDialog();
     return done;
   }
@@ -58,6 +63,7 @@ export function createAppLock({ uid, username, name, storage = globalThis.localS
     const waiters = unlockWaiters;
     unlockWaiters = [];
     waiters.forEach((r) => r());
+    onUnlock();
   }
 
   function showDialog() {
