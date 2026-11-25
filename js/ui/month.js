@@ -8,41 +8,42 @@ import { monthLabel, monthShortLabel, prevMonth, nextMonth } from '../dates.js';
 import { formatMoney, formatBp, parseMoney, moneyFieldValue, HIDDEN } from '../format.js';
 import { html, mount, $, $$, bindMoneyInputs } from './dom.js';
 import { icons } from './icons.js';
-import { header, bindEye, rankBadge, debtSubline, money, catColor } from './common.js';
+import { header, bindEye, rankBadge, debtSubline, money, catColor, catLabel } from './common.js';
+import { t } from '../i18n.js';
 import { openSalarySheet } from './salary-sheet.js';
 
 const STATUS_CHIP = {
-  [STATUS.CLOSING]: { cls: 'chip--paid', text: 'ปิดก้อนนี้', check: true },
-  [STATUS.PAID]: { cls: 'chip--paid', text: 'จ่ายแล้ว' },
-  [STATUS.UNPAID]: { cls: 'chip--unpaid', text: 'ยังไม่จ่าย' },
+  [STATUS.CLOSING]: { cls: 'chip--paid', text: 'st.closing', check: true },
+  [STATUS.PAID]: { cls: 'chip--paid', text: 'st.paid' },
+  [STATUS.UNPAID]: { cls: 'chip--unpaid', text: 'st.unpaid' },
 };
 
 function statusChip(status) {
   const s = STATUS_CHIP[status];
   if (!s) return '';
-  return html`<span class="chip ${s.cls}">${s.check ? icons.check(14) : ''}${s.text}</span>`;
+  return html`<span class="chip ${s.cls}">${s.check ? icons.check(14) : ''}${t(s.text)}</span>`;
 }
 
 function salaryCard(app, key, month, cats) {
   const s = allocSummary(month.salarySatang, month.allocBp, cats);
   const noSalary = month.salarySatang === 0;
   return html`
-    <section class="card salary-card" aria-label="เงินเดือนและแบ่งงบ">
+    <section class="card salary-card" aria-label="${t('m.salaryAria')}">
       <div class="salary-card__top">
         <div class="salary-card__text">
-          <p class="salary-card__label">เงินเดือน (บาท/เดือน)</p>
+          <p class="salary-card__label">${t('m.salaryLabel')}</p>
           ${noSalary
-            ? html`<p class="salary-card__empty">ยังไม่ได้กรอกเงินเดือน</p>`
+            ? html`<p class="salary-card__empty">${t('m.noSalary')}</p>`
             : html`<p class="salary-card__value" id="salary-value" aria-live="polite">${HIDDEN}</p>`}
-          ${month.draft && !noSalary ? html`<p class="salary-card__draft">ใช้ค่าจากเดือนก่อน · ยังไม่บันทึก</p>` : ''}
+          ${month.draft && !noSalary ? html`<p class="salary-card__draft">${t('m.draft')}</p>` : ''}
         </div>
         ${noSalary
-          ? html`<button type="button" class="btn btn--primary btn--sm" id="salary-edit">กรอกเงินเดือน</button>`
+          ? html`<button type="button" class="btn btn--primary btn--sm" id="salary-edit">${t('m.enterSalary')}</button>`
           : html`
             <div class="salary-card__btns">
               <button type="button" class="pill-btn" id="salary-peek" aria-describedby="salary-value">
-                ${icons.eye(20)} กดค้างดู</button>
-              <button type="button" class="icon-btn icon-btn--hi" id="salary-edit" aria-label="แก้เงินเดือนและแบ่งงบ">
+                ${icons.eye(20)} ${t('m.hold')}</button>
+              <button type="button" class="icon-btn icon-btn--hi" id="salary-edit" aria-label="${t('m.editSalary')}">
                 ${icons.pencil()}</button>
             </div>`}
       </div>
@@ -53,14 +54,14 @@ function salaryCard(app, key, month, cats) {
         ${s.items.map((x) => html`
           <li class="legend__item">
             <span class="dot" style="background:${catColor(x)}" aria-hidden="true"></span>
-            <span class="legend__name">${x.label}</span>
+            <span class="legend__name">${catLabel(x)}</span>
             <span class="legend__pct">${formatBp(x.bp)}</span>
           </li>`)}
       </ul>
-      ${s.over ? html`<p class="warn-line">รวมเกิน 100% อยู่ ${formatBp(s.overBp)}</p>` : ''}
+      ${s.over ? html`<p class="warn-line">${t('m.over', { pct: formatBp(s.overBp) })}</p>` : ''}
       <div class="row2">
-        <button type="button" class="btn btn--ghost btn--sm" id="alloc-edit">ปรับสัดส่วน % / ฿</button>
-        <button type="button" class="dashed-btn" id="cat-add">+ เพิ่มหมวด</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="alloc-edit">${t('m.allocEdit')}</button>
+        <button type="button" class="dashed-btn" id="cat-add">${t('m.catAdd')}</button>
       </div>
     </section>`;
 }
@@ -69,9 +70,9 @@ function salaryCard(app, key, month, cats) {
 function summaryLine(app, v) {
   return html`
     <p class="month-sum" id="month-sum">
-      <span>ต้นเดือน <b>${money(app, v.monthOpening)}</b></span>
-      <span>ชำระ <b class="is-green">${money(app, v.monthPaid)}</b></span>
-      <span>คงเหลือ <b class="is-accent">${money(app, v.monthRemaining)}</b></span>
+      <span>${t('m.opening')} <b>${money(app, v.monthOpening)}</b></span>
+      <span>${t('m.pay')} <b class="is-green">${money(app, v.monthPaid)}</b></span>
+      <span>${t('m.remaining')} <b class="is-accent">${money(app, v.monthRemaining)}</b></span>
     </p>`;
 }
 
@@ -89,23 +90,23 @@ function payCard(app, key, row) {
       </div>
       <div class="pay-grid">
         <div class="pay-grid__col">
-          <span class="pay-grid__label">ต้นเดือน</span>
+          <span class="pay-grid__label">${t('m.opening')}</span>
           <span class="pay-grid__val">${money(app, row.opening)}</span>
         </div>
         <label class="pay-grid__col pay-grid__col--input">
-          <span class="pay-grid__label">ชำระเดือนนี้</span>
+          <span class="pay-grid__label">${t('m.payThis')}</span>
           <input class="input pay-input ${row.pay > 0 ? 'has-value' : ''}" data-id="${debt.id}" inputmode="decimal"
                  autocomplete="off" placeholder="0.00" value="${moneyFieldValue(row.pay)}"
                  aria-describedby="name-${debt.id}">
         </label>
         <div class="pay-grid__col pay-grid__col--end">
-          <span class="pay-grid__label">เหลือหลังชำระ</span>
+          <span class="pay-grid__label">${t('m.after')}</span>
           <span class="pay-grid__val ${row.pay > 0 ? 'is-green' : ''}" data-remaining>${money(app, row.remainingAfter)}</span>
         </div>
       </div>
       ${prev.show ? html`
         <button type="button" class="pill-btn pill-btn--sm" data-prev="${debt.id}">
-          ${icons.copy()} ใช้ยอด ${monthShortLabel(prevMonth(key))} ${money(app, prev.prevPay)}</button>` : ''}
+          ${icons.copy()} ${t('m.usePrev', { month: monthShortLabel(prevMonth(key)), amount: money(app, prev.prevPay) })}</button>` : ''}
     </li>`;
 }
 
@@ -114,7 +115,7 @@ function closedCard(app, row) {
     <li class="card closed-card">
       ${rankBadge(row.rank, true)}
       <span class="closed-card__name">${row.debt.account}</span>
-      <span class="closed-card__text">ปิดหนี้นี้แล้ว</span>
+      <span class="closed-card__text">${t('m.closedDebt')}</span>
     </li>`;
 }
 
@@ -130,16 +131,16 @@ export function renderMonth(view, app, key) {
     const idx = opts.indexOf(key);
 
     mount(view, html`
-      ${header(app, { eyebrow: 'กรอกยอดชำระ', title: 'เดือนนี้' })}
+      ${header(app, { eyebrow: t('m.eyebrow'), title: t('m.title') })}
 
       <div class="month-pick">
-        <button type="button" class="icon-btn" id="m-prev" aria-label="เดือนก่อน" ${idx <= 0 ? html`disabled` : ''}>
+        <button type="button" class="icon-btn" id="m-prev" aria-label="${t('m.prev')}" ${idx <= 0 ? html`disabled` : ''}>
           ${icons.chevronLeft()}</button>
-        <label class="visually-hidden" for="m-select">เลือกเดือน</label>
+        <label class="visually-hidden" for="m-select">${t('m.pick')}</label>
         <select class="select select--center" id="m-select">
           ${opts.map((k) => html`<option value="${k}" ${k === key ? html`selected` : ''}>${monthLabel(k)}</option>`)}
         </select>
-        <button type="button" class="icon-btn" id="m-next" aria-label="เดือนถัดไป" ${idx >= opts.length - 1 ? html`disabled` : ''}>
+        <button type="button" class="icon-btn" id="m-next" aria-label="${t('m.next')}" ${idx >= opts.length - 1 ? html`disabled` : ''}>
           ${icons.chevronRight()}</button>
       </div>
 
@@ -148,20 +149,20 @@ export function renderMonth(view, app, key) {
 
       ${app.debts.length === 0 ? html`
         <div class="empty">
-          <p>ยังไม่มีรายการหนี้</p>
-          <a class="btn btn--primary" href="#/overview">ไปเพิ่มหนี้ที่หน้าภาพรวม</a>
+          <p>${t('ov.emptyTitle')}</p>
+          <a class="btn btn--primary" href="#/overview">${t('m.goAdd')}</a>
         </div>` : html`
         <div class="section-head">
-          <h2 class="section-head__title">เรียงตามดอกแพงก่อน</h2>
-          <span class="section-head__count">${v.active.length} ก้อน</span>
+          <h2 class="section-head__title">${t('m.order')}</h2>
+          <span class="section-head__count">${t('unit.debts', { n: v.active.length })}</span>
         </div>
         ${v.active.length
           ? html`<ul class="pay-list">${v.active.map((r) => payCard(app, key, r))}</ul>`
-          : html`<p class="empty">${v.closed.length ? 'ทุกก้อนปิดแล้วในเดือนนี้' : 'ยังไม่มีหนี้ที่เริ่มนับในเดือนนี้'}</p>`}
+          : html`<p class="empty">${v.closed.length ? t('m.allClosed') : t('m.noneStarted')}</p>`}
         ${v.closed.length ? html`
           <button type="button" class="closed-toggle" id="closed-toggle" aria-expanded="${String(closedOpen)}"
                   aria-controls="closed-list">
-            ปิดแล้ว ${v.closed.length} ก้อน ${icons.chevronDown()}</button>
+            ${t('m.closedToggle', { n: v.closed.length })} ${icons.chevronDown()}</button>
           <ul class="closed-list" id="closed-list" ${closedOpen ? '' : html`hidden`}>
             ${v.closed.map((r) => closedCard(app, r))}
           </ul>` : ''}`}`);

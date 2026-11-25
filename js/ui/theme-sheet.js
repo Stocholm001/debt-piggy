@@ -1,6 +1,7 @@
 // ui/theme-sheet.js — เลือกธีมสี (design/THEMES.md) แตะแล้วเปลี่ยนทั้งแอปทันที จำแยกตามเครื่อง
 
-import { THEMES, getTheme, setTheme } from '../theme.js';
+import { THEMES, getTheme, setTheme, themeName } from '../theme.js';
+import { t } from '../i18n.js';
 import { html, $, $$, openSheet } from './dom.js';
 import { icons } from './icons.js';
 
@@ -12,8 +13,8 @@ export function openThemeSheet() {
       <div class="sheet__form">
         <div class="sheet__grip" aria-hidden="true"></div>
         <div class="sheet__head">
-          <h2 class="sheet__title" id="theme-title">ธีมสี</h2>
-          <button type="button" class="icon-btn" data-close aria-label="ปิด">${icons.close()}</button>
+          <h2 class="sheet__title" id="theme-title">${t('set.theme')}</h2>
+          <button type="button" class="icon-btn" data-close aria-label="${t('common.close')}">${icons.close()}</button>
         </div>
         <div class="themes" role="radiogroup" aria-labelledby="theme-title">
           ${THEMES.map((th) => html`
@@ -23,11 +24,11 @@ export function openThemeSheet() {
                 <span style="background:${th.accent}"></span>
                 <span style="background:${th.paid}"></span>
               </span>
-              <span class="theme-opt__label">${th.label}</span>
+              <span class="theme-opt__label">${themeName(th.id)}</span>
               <span class="theme-opt__check" aria-hidden="true">${icons.check(16)}</span>
             </button>`)}
         </div>
-        <p class="hint">จำธีมไว้ในเครื่องนี้ เครื่องอื่นเลือกแยกได้</p>
+        <p class="hint">${t('theme.hint')}</p>
       </div>`, { labelledBy: 'theme-title' });
 
     $('[data-close]', dlg).addEventListener('click', () => dlg.close());

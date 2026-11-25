@@ -1,6 +1,8 @@
 // format.js — จัดรูปแบบเงิน/%, แปลงข้อความที่ผู้ใช้กรอก, ซ่อนตัวเลข
 // รับ/คืนค่าเป็นสตางค์และ basis points (integer) เสมอ ไม่แปลงผ่าน float (SPEC ข้อ 5.1)
 
+import { t } from './i18n.js';
+
 export const MINUS = '−'; // U+2212
 export const HIDDEN = '••••••';
 export const NO_PCT = '—';
@@ -50,7 +52,7 @@ export function formatBp(bp) {
 }
 
 /** ข้อความดอกเบี้ย: 4000 → "ดอก 40%/ปี" */
-export const formatRate = (rateBp) => `ดอก ${formatBp(rateBp)}/ปี`;
+export const formatRate = (rateBp) => t('rate', { pct: formatBp(rateBp) });
 
 /** ซ่อนยอดเงินเมื่อ hidden = true (ใช้กับข้อความเงินที่จัดรูปแบบแล้ว) */
 export const maskMoney = (text, hidden) => (hidden ? HIDDEN : text);
@@ -164,10 +166,10 @@ export const pctFieldValue = (bp) => (bp == null ? '' : formatBp(bp).replace('%'
  */
 export function encouragement(progressTenths) {
   if (progressTenths == null) return '';
-  if (progressTenths >= 1000) return 'ปลดหนี้ครบทุกก้อนแล้ว เก่งมาก';
-  if (progressTenths >= 750) return 'อีกนิดเดียวก็ปลดหนี้หมดแล้ว';
-  if (progressTenths >= 500) return 'เกินครึ่งทางแล้ว ไปต่ออีกนิด';
-  if (progressTenths >= 250) return 'มาได้ดี หยอดกระปุกต่อทุกเดือน';
-  if (progressTenths > 0) return 'เริ่มแล้ว ค่อย ๆ ปลดทีละก้อน';
-  return 'เริ่มจากก้อนดอกแพงที่สุดก่อน';
+  if (progressTenths >= 1000) return t('cheer.done');
+  if (progressTenths >= 750) return t('cheer.75');
+  if (progressTenths >= 500) return t('cheer.50');
+  if (progressTenths >= 250) return t('cheer.25');
+  if (progressTenths > 0) return t('cheer.started');
+  return t('cheer.zero');
 }

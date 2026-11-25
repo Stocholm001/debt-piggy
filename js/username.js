@@ -1,6 +1,8 @@
 // username.js — normalize ชื่อผู้ใช้, แปลงเป็นอีเมลภายใน, ชื่อที่ใช้ล่าสุดในเครื่อง (ยกจาก salary-calc)
 // pure (ไม่แตะ Firebase) เพื่อให้เทสต์ได้ด้วย node --test
 
+import { t } from './i18n.js';
+
 /** อีเมลส่วนหน้า @ ยาวได้ไม่เกิน 64 ตัว: "u_" + hex 2 ตัวต่อไบต์ → username ได้ไม่เกิน 31 ไบต์ UTF-8 */
 export const MAX_USERNAME_BYTES = 31;
 export const MAX_RECENT = 5;
@@ -18,8 +20,8 @@ const utf8 = (s) => new TextEncoder().encode(s);
 
 /** ข้อความ error หรือ null ถ้าใช้ได้ (ใช้ตอนเข้าสู่ระบบ) */
 export function validateUsername(username) {
-  if (!username || /^_+$/.test(username)) return 'กรอกชื่อผู้ใช้';
-  if (utf8(username).length > MAX_USERNAME_BYTES) return 'ชื่อยาวเกินไป';
+  if (!username || /^_+$/.test(username)) return t('user.required');
+  if (utf8(username).length > MAX_USERNAME_BYTES) return t('user.tooLong');
   return null;
 }
 
@@ -37,7 +39,7 @@ export const isValidPin = (pin) => /^\d{6}$/.test(pin);
 
 export const NEW_USERNAME_MIN = 3;
 export const NEW_USERNAME_MAX = 20;
-export const USERNAME_RULES = 'ภาษาอังกฤษ a–z, ตัวเลข 0–9 และ _ · ยาว 3–20 ตัว · ขึ้นต้นด้วยตัวอักษร · เปลี่ยนภายหลังไม่ได้';
+export const usernameRules = () => t('user.rules');
 
 /**
  * ตรวจชื่อผู้ใช้ตอนสมัคร (ไม่แก้ค่าที่กรอกให้เงียบ ๆ แต่บอกว่าผิดตรงไหน)
@@ -47,12 +49,12 @@ export function checkNewUsername(raw) {
   const s = String(raw ?? '').trim();
   const username = s.toLowerCase();
   let error = null;
-  if (!s) error = 'กรอกชื่อผู้ใช้';
-  else if (!/^[A-Za-z0-9_]+$/.test(s)) error = 'ใช้ได้เฉพาะภาษาอังกฤษ a–z ตัวเลข 0–9 และ _ (ห้ามเว้นวรรค ภาษาไทย หรืออักขระพิเศษ)';
-  else if (!/^[a-z]/.test(username)) error = 'ต้องขึ้นต้นด้วยตัวอักษรภาษาอังกฤษ';
+  if (!s) error = t('user.required');
+  else if (!/^[A-Za-z0-9_]+$/.test(s)) error = t('user.chars');
+  else if (!/^[a-z]/.test(username)) error = t('user.start');
   else if (username.length < NEW_USERNAME_MIN || username.length > NEW_USERNAME_MAX) {
-    error = `ต้องยาว ${NEW_USERNAME_MIN}–${NEW_USERNAME_MAX} ตัวอักษร`;
-  } else if (/__/.test(username) || username.endsWith('_')) error = 'ห้ามมี _ ติดกัน และห้ามลงท้ายด้วย _';
+    error = t('user.length', { min: NEW_USERNAME_MIN, max: NEW_USERNAME_MAX });
+  } else if (/__/.test(username) || username.endsWith('_')) error = t('user.underscore');
   return { username, error };
 }
 

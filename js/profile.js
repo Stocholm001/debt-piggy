@@ -1,7 +1,8 @@
 // profile.js — ข้อมูลส่วนตัวของผู้ใช้: ชื่อ*, นามสกุล, วันเกิด (ไม่บังคับ) (ยกจาก salary-calc)
 // ไม่แตะ DOM/Firebase
 
-import { THAI_MONTHS, toBE } from './dates.js';
+import { monthName, yearNumber } from './dates.js';
+import { t } from './i18n.js';
 
 export const NAME_MAX = 40;
 
@@ -34,14 +35,14 @@ export function validateProfile({ firstName, lastName, birthday }, today = today
   const last = clean(lastName);
   const birth = String(birthday ?? '').trim();
 
-  if (!first) errors.firstName = 'กรอกชื่อ';
-  else if ([...first].length > NAME_MAX) errors.firstName = `ยาวได้ไม่เกิน ${NAME_MAX} ตัวอักษร`;
-  if ([...last].length > NAME_MAX) errors.lastName = `ยาวได้ไม่เกิน ${NAME_MAX} ตัวอักษร`;
+  if (!first) errors.firstName = t('prof.errFirst');
+  else if ([...first].length > NAME_MAX) errors.firstName = t('prof.errLong', { n: NAME_MAX });
+  if ([...last].length > NAME_MAX) errors.lastName = t('prof.errLong', { n: NAME_MAX });
 
   if (birth) {
     const p = parseIsoDate(birth);
-    if (!p || p.y < 1900) errors.birthday = 'วันเกิดไม่ถูกต้อง';
-    else if (birth > today) errors.birthday = 'วันเกิดต้องไม่เกินวันนี้';
+    if (!p || p.y < 1900) errors.birthday = t('prof.errBirth');
+    else if (birth > today) errors.birthday = t('prof.errBirthFuture');
   }
 
   if (Object.keys(errors).length) return { ok: false, errors };
@@ -71,5 +72,5 @@ export function greetName(p) {
 export function formatBirthday(iso) {
   const p = parseIsoDate(iso);
   if (!p) return '';
-  return `${p.d} ${THAI_MONTHS[p.m - 1]} ${toBE(p.y)}`;
+  return `${p.d} ${monthName(p.m)} ${yearNumber(p.y)}`;
 }

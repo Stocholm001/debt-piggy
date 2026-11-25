@@ -3,13 +3,14 @@
 // เพิ่ม/ลบหมวด และสัดส่วน มีผลเมื่อกดบันทึกเท่านั้น
 
 import { allocSummary, allocAmount, bpFromAmount, canUseAmountMode, nextCatColor } from '../calc.js';
-import { monthShortLabel, parseMonthKey, toBE } from '../dates.js';
+import { monthLabel } from '../dates.js';
 import {
   formatMoney, formatBp, parseMoney, parsePercent, moneyFieldValue, pctFieldValue,
 } from '../format.js';
 import { html, mount, $, $$, openSheet, bindMoneyInputs, choose, confirmDialog } from './dom.js';
 import { icons } from './icons.js';
-import { newId, catColor } from './common.js';
+import { newId, catColor, catLabel } from './common.js';
+import { t } from '../i18n.js';
 
 /**
  * @param key            เดือน YYYY-MM
@@ -29,18 +30,18 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
   const origBp = { ...draft.bp };
   const origCatsJson = JSON.stringify(draft.cats);
 
-  const title = `เงินเดือนและแบ่งงบ · ${monthShortLabel(key)} ${toBE(parseMonthKey(key).year)}`;
+  const title = t('s.title', { month: monthLabel(key) });
 
   const dlg = openSheet(html`
     <form class="sheet__form" novalidate>
       <div class="sheet__grip" aria-hidden="true"></div>
       <div class="sheet__head">
         <h2 class="sheet__title" id="salary-title">${title}</h2>
-        <button type="button" class="icon-btn" data-close aria-label="ปิด">${icons.close()}</button>
+        <button type="button" class="icon-btn" data-close aria-label="${t('common.close')}">${icons.close()}</button>
       </div>
 
       <label class="field">
-        <span class="field__label">เงินเดือน (บาท/เดือน)</span>
+        <span class="field__label">${t('m.salaryLabel')}</span>
         <input class="input input--big" name="salary" inputmode="decimal" autocomplete="off"
                aria-describedby="err-salary" value="${moneyFieldValue(draft.salary)}" placeholder="0.00">
         <span class="field__error" id="err-salary" aria-live="polite"></span>
@@ -54,16 +55,16 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
       </div>
 
       <div class="add-cat">
-        <label class="visually-hidden" for="new-cat">ชื่อหมวดใหม่</label>
+        <label class="visually-hidden" for="new-cat">${t('s.newCat')}</label>
         <input class="input input--dashed" id="new-cat" maxlength="30" autocomplete="off"
-               placeholder="เพิ่มหมวด เช่น ลงทุน, ประกัน">
-        <button type="button" class="btn btn--plain" id="add-cat">${icons.plus(20)} เพิ่ม</button>
+               placeholder="${t('s.newCatPh')}">
+        <button type="button" class="btn btn--plain" id="add-cat">${icons.plus(20)} ${t('s.add')}</button>
       </div>
       <p class="field__error" id="err-cat" aria-live="polite"></p>
 
       <div class="sheet__actions">
-        <button type="button" class="btn btn--ghost" data-close>ยกเลิก</button>
-        <button type="submit" class="btn btn--primary">บันทึก</button>
+        <button type="button" class="btn btn--ghost" data-close>${t('common.cancel')}</button>
+        <button type="submit" class="btn btn--primary">${t('common.save')}</button>
       </div>
     </form>`, { labelledBy: 'salary-title' });
 
@@ -78,7 +79,7 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
     : pctFieldValue(draft.bp[k]));
   const otherText = (k) => (modeOf(k) === 'baht'
     ? `= ${formatBp(draft.bp[k])}`
-    : `= ${formatMoney(allocAmount(draft.salary, draft.bp[k]))} บาท`);
+    : t('s.amount', { amount: formatMoney(allocAmount(draft.salary, draft.bp[k])) }));
 
   function renderList() {
     const bahtOk = canUseAmountMode(draft.salary);
@@ -89,18 +90,18 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
           <span class="dot" style="background:${catColor(c)}" aria-hidden="true"></span>
           <span class="alloc-row__name">
             <span class="alloc-row__label-line">
-              <span class="alloc-row__label" id="lbl-${c.key}">${c.label}</span>
+              <span class="alloc-row__label" id="lbl-${c.key}">${catLabel(c)}</span>
               ${c.builtIn ? '' : html`
                 <button type="button" class="alloc-row__del" data-del="${c.key}"
-                        aria-label="ลบหมวด ${c.label}">${icons.close(16)}</button>`}
+                        aria-label="${t('s.delCatAria', { name: catLabel(c) })}">${icons.close(16)}</button>`}
             </span>
             <span class="alloc-row__other" id="other-${c.key}">${otherText(c.key)}</span>
           </span>
-          <span class="unit-seg" role="group" aria-label="หน่วยของ ${c.label}">
+          <span class="unit-seg" role="group" aria-label="${t('s.unitAria', { name: catLabel(c) })}">
             <button type="button" class="unit-seg__btn" data-unit="pct" aria-pressed="${String(mode === 'pct')}"
-                    aria-label="กรอกเป็นเปอร์เซ็นต์">%</button>
+                    aria-label="${t('s.pctAria')}">%</button>
             <button type="button" class="unit-seg__btn" data-unit="baht" aria-pressed="${String(mode === 'baht')}"
-                    aria-label="กรอกเป็นบาท" ${bahtOk ? '' : html`disabled`}>฿</button>
+                    aria-label="${t('s.bahtAria')}" ${bahtOk ? '' : html`disabled`}>฿</button>
           </span>
           <input class="input alloc-input" data-key="${c.key}" data-mode="${mode}" inputmode="decimal"
                  autocomplete="off" aria-labelledby="lbl-${c.key}" value="${fieldValue(c.key)}" placeholder="0">
@@ -115,8 +116,8 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
       <span style="width:${x.widthBp / 100}%;background:${catColor(x)}"></span>`));
     const el = $('#alloc-total', dlg);
     el.textContent = s.over
-      ? `รวมเกิน 100% อยู่ ${formatBp(s.overBp)}`
-      : `รวม ${formatBp(s.totalBp)} จาก 100%`;
+      ? t('m.over', { pct: formatBp(s.overBp) })
+      : t('s.total', { pct: formatBp(s.totalBp) });
     el.classList.toggle('is-over', s.over);
   }
 
@@ -182,9 +183,9 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
       const k = del.dataset.del;
       const cat = draft.cats.find((c) => c.key === k);
       const ok = await confirmDialog({
-        title: 'ลบหมวดนี้?',
-        message: `ลบหมวด "${cat.label}" และสัดส่วนของหมวดนี้ออกจากทุกเดือน`,
-        okLabel: 'ลบหมวด',
+        title: t('s.delCatTitle'),
+        message: t('s.delCatMsg', { name: catLabel(cat) }),
+        okLabel: t('s.delCatOk'),
         tone: 'danger',
       });
       if (!ok) return;
@@ -200,8 +201,8 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
   const addCat = () => {
     const label = newCat.value.trim();
     const err = $('#err-cat', dlg);
-    if (!label) { err.textContent = 'ตั้งชื่อหมวดก่อน'; newCat.focus(); return; }
-    if (draft.cats.some((c) => c.label === label)) { err.textContent = 'มีหมวดชื่อนี้แล้ว'; newCat.focus(); return; }
+    if (!label) { err.textContent = t('s.catNameReq'); newCat.focus(); return; }
+    if (draft.cats.some((c) => c.label === label || catLabel(c) === label)) { err.textContent = t('s.catDup'); newCat.focus(); return; }
     err.textContent = '';
     const cat = { key: newId('cat'), label, color: nextCatColor(draft.cats), builtIn: false };
     draft.cats.push(cat);
@@ -222,7 +223,7 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
     const text = salaryInput.value.trim();
     const salary = text === '' ? 0 : parseMoney(text);
     if (salary == null) {
-      $('#err-salary', dlg).textContent = 'กรอกเป็นตัวเลข ทศนิยมไม่เกิน 2 ตำแหน่ง';
+      $('#err-salary', dlg).textContent = t('err.number');
       salaryInput.setAttribute('aria-invalid', 'true');
       salaryInput.focus();
       return;
@@ -236,11 +237,11 @@ export function openSalarySheet(app, key, { focusAdd = false } = {}) {
     const later = app.savedMonthsAfter(key);
     if (allocChanged && later.length) {
       scope = await choose({
-        title: 'ใช้สัดส่วนนี้กับเดือนไหน?',
-        message: `มีเดือนถัดไปที่บันทึกแล้ว ${later.length} เดือน`,
+        title: t('s.scopeTitle'),
+        message: t('s.scopeMsg', { n: later.length }),
         options: [
-          { label: 'เฉพาะเดือนนี้', value: 'this', tone: 'plain' },
-          { label: 'เดือนนี้และเดือนถัดไปที่บันทึกแล้ว', value: 'forward', tone: 'primary' },
+          { label: t('s.scopeThis'), value: 'this', tone: 'plain' },
+          { label: t('s.scopeForward'), value: 'forward', tone: 'primary' },
         ],
       });
       if (!scope) return;

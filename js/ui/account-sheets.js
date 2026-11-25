@@ -6,6 +6,7 @@ import { validateProfile, todayIso } from '../profile.js';
 import { html, mount, $, openSheet, toast } from './dom.js';
 import { icons } from './icons.js';
 import { createPinPad } from './pinpad.js';
+import { t } from '../i18n.js';
 
 /**
  * โปรไฟล์: ดูชื่อผู้ใช้ และแก้ ชื่อ / นามสกุล / วันเกิด
@@ -25,23 +26,23 @@ export function openProfileSheet(account, save) {
       <form class="sheet__form" id="pf-form" novalidate>
         <div class="sheet__grip" aria-hidden="true"></div>
         <div class="sheet__head">
-          <h2 class="sheet__title" id="pf-title">โปรไฟล์</h2>
-          <button type="button" class="icon-btn" data-close aria-label="ปิด">${icons.close()}</button>
+          <h2 class="sheet__title" id="pf-title">${t('prof.title')}</h2>
+          <button type="button" class="icon-btn" data-close aria-label="${t('common.close')}">${icons.close()}</button>
         </div>
         <div class="field">
-          <span class="field__label">ชื่อผู้ใช้ (ไว้ล็อกอิน)</span>
+          <span class="field__label">${t('prof.username')}</span>
           <p class="readonly-value">@${account.username}</p>
-          <span class="field__hint">เปลี่ยนภายหลังไม่ได้</span>
+          <span class="field__hint">${t('prof.usernameFixed')}</span>
         </div>
-        ${field('pf-first', 'ชื่อ', html`<input class="input" id="pf-first" type="text" autocomplete="given-name"
+        ${field('pf-first', t('prof.first'), html`<input class="input" id="pf-first" type="text" autocomplete="given-name"
               maxlength="40" value="${account.firstName || account.displayName || ''}" aria-describedby="pf-first-err" required>`)}
-        ${field('pf-last', 'นามสกุล · ไม่บังคับ', html`<input class="input" id="pf-last" type="text" autocomplete="family-name"
+        ${field('pf-last', t('prof.last'), html`<input class="input" id="pf-last" type="text" autocomplete="family-name"
               maxlength="40" value="${account.lastName ?? ''}" aria-describedby="pf-last-err">`)}
-        ${field('pf-birth', 'วันเกิด · ไม่บังคับ', html`<input class="input" id="pf-birth" type="date" autocomplete="bday"
+        ${field('pf-birth', t('prof.birth'), html`<input class="input" id="pf-birth" type="date" autocomplete="bday"
               min="1900-01-01" max="${todayIso()}" value="${account.birthday ?? ''}" aria-describedby="pf-birth-err">`)}
         <div class="sheet__actions">
-          <button type="button" class="btn btn--ghost" data-close>ยกเลิก</button>
-          <button type="submit" class="btn btn--primary" id="pf-save">บันทึก</button>
+          <button type="button" class="btn btn--ghost" data-close>${t('common.cancel')}</button>
+          <button type="submit" class="btn btn--primary" id="pf-save">${t('common.save')}</button>
         </div>
       </form>`, { labelledBy: 'pf-title' });
 
@@ -80,7 +81,7 @@ export function openChangePin(username) {
       <h2 class="sheet__title sheet__title--center" id="cp-title"></h2>
       <div id="cp-pad"></div>
       <p class="login__msg" id="cp-msg" role="alert"></p>
-      <button type="button" class="btn btn--ghost" id="cp-cancel">ยกเลิก</button>
+      <button type="button" class="btn btn--ghost" id="cp-cancel">${t('common.cancel')}</button>
     </div>`, { labelledBy: 'cp-title' });
 
   let pad = null;
@@ -92,13 +93,13 @@ export function openChangePin(username) {
     const tick = () => {
       const ms = lockRemaining(localStorage, username);
       if (!ms) { clearInterval(lockTimer); pad.lock(false); msg.textContent = ''; return; }
-      msg.textContent = `ใส่ PIN ผิด 3 ครั้ง รออีก ${formatWait(ms)} นาทีแล้วลองใหม่`;
+      msg.textContent = t('pin.locked', { wait: formatWait(ms) });
     };
     tick();
     lockTimer = setInterval(tick, 1000);
   };
 
-  const TITLES = { old: 'กรอก PIN เดิม', next: 'ตั้ง PIN ใหม่ 6 หลัก', confirm: 'กรอก PIN ใหม่อีกครั้ง' };
+  const TITLES = { old: t('pin.old'), next: t('pin.new'), confirm: t('pin.newConfirm') };
 
   function step(stage, firstPin = '', message = '') {
     pad?.destroy();
@@ -109,7 +110,7 @@ export function openChangePin(username) {
         msg.textContent = '';
         if (stage === 'old') {
           if (lockRemaining(localStorage, username)) { showLock(); return; }
-          msg.textContent = 'กำลังตรวจสอบ…';
+          msg.textContent = t('common.checking');
           try {
             await verifyPin(pin);
             clearFails(localStorage, username);
@@ -119,20 +120,20 @@ export function openChangePin(username) {
             if (isWrongPin(e)) {
               const r = recordFail(localStorage, username);
               pad.shake();
-              if (r.lockedMs) showLock(); else msg.textContent = `PIN ไม่ถูกต้อง เหลืออีก ${r.left} ครั้ง`;
+              if (r.lockedMs) showLock(); else msg.textContent = t('pin.wrongLeft', { n: r.left });
             } else if (e?.code === 'auth/too-many-requests') pad.shake(); else pad.reset();
           }
         } else if (stage === 'next') {
           step('confirm', pin);
         } else if (pin !== firstPin) {
           pad.shake();
-          setTimeout(() => step('next', '', 'PIN ไม่ตรงกัน ตั้งใหม่อีกครั้ง'), 450);
+          setTimeout(() => step('next', '', t('pin.mismatch')), 450);
         } else {
-          msg.textContent = 'กำลังบันทึก…';
+          msg.textContent = t('common.saving');
           try {
             await changePin(pin);
             dlg.close();
-            toast('เปลี่ยน PIN แล้ว');
+            toast(t('pin.changed'));
           } catch (e) {
             console.error(e);
             step(e?.code === 'auth/requires-recent-login' ? 'old' : 'next', '', authErrorMessage(e));

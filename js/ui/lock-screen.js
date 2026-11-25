@@ -7,6 +7,7 @@ import { verifyPin, authErrorMessage, isWrongPin } from '../auth.js';
 import { lockRemaining, recordFail, clearFails, formatWait } from '../lockout.js';
 import { html, mount, $ } from './dom.js';
 import { createPinPad } from './pinpad.js';
+import { t } from '../i18n.js';
 
 const TOUCH_THROTTLE_MS = 15 * 1000; // บันทึกเวลาใช้งานล่าสุดไม่ถี่เกินนี้
 const CHECK_EVERY_MS = 30 * 1000;    // ตรวจว่าครบเวลาล็อกหรือยัง ระหว่างเปิดแอปค้างไว้
@@ -76,13 +77,13 @@ export function createAppLock({
       <main class="login login--pin">
         <div class="login__hero">
           ${lockIcon()}
-          <h1 class="login__title" id="applock-title">แอปล็อกอยู่</h1>
-          <p class="login__sub">กรอก PIN 6 หลักของ ${name} เพื่อใช้งานต่อ</p>
+          <h1 class="login__title" id="applock-title">${t('lock.title')}</h1>
+          <p class="login__sub">${t('lock.sub', { name })}</p>
         </div>
         <div id="applock-pad"></div>
         <p class="login__msg" id="applock-msg" role="alert"></p>
-        <button type="button" class="link-back" id="applock-logout">ออกจากระบบ / ใช้ชื่ออื่น</button>
-        <p class="login__foot">ไม่ได้ใช้งานเกิน ${LOCK_AFTER_MS / 60000} นาที · ต้องต่ออินเทอร์เน็ตตอนปลดล็อก</p>
+        <button type="button" class="link-back" id="applock-logout">${t('lock.logout')}</button>
+        <p class="login__foot">${t('lock.foot', { min: LOCK_AFTER_MS / 60000 })}</p>
       </main>`);
     document.body.append(dlg);
 
@@ -95,7 +96,7 @@ export function createAppLock({
       const tick = () => {
         const ms = lockRemaining(storage, username);
         if (!ms) { stopLockTimer(); pad.lock(false); msg.textContent = ''; return; }
-        msg.textContent = `ใส่ PIN ผิด 3 ครั้ง รออีก ${formatWait(ms)} นาทีแล้วลองใหม่`;
+        msg.textContent = t('pin.locked', { wait: formatWait(ms) });
       };
       pad.lock(true);
       stopLockTimer();
@@ -106,7 +107,7 @@ export function createAppLock({
     pad = createPinPad($('#applock-pad', dlg), {
       async onComplete(pin) {
         if (lockRemaining(storage, username)) { applyLockout(); return; }
-        msg.textContent = 'กำลังตรวจสอบ…';
+        msg.textContent = t('common.checking');
         try {
           await verifyPin(pin);
         } catch (e) {
@@ -115,7 +116,7 @@ export function createAppLock({
           if (isWrongPin(e)) {
             const r = recordFail(storage, username);
             pad.shake();
-            if (r.lockedMs) applyLockout(); else msg.textContent = `PIN ไม่ถูกต้อง เหลืออีก ${r.left} ครั้ง`;
+            if (r.lockedMs) applyLockout(); else msg.textContent = t('pin.wrongLeft', { n: r.left });
           } else if (e?.code === 'auth/too-many-requests') pad.shake();
           else pad.reset();
           return;

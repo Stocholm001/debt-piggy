@@ -5,7 +5,8 @@ import { monthLabel } from '../dates.js';
 import { formatPctOf, encouragement } from '../format.js';
 import { html, mount, $, $$ } from './dom.js';
 import { icons, pig } from './icons.js';
-import { header, bindEye, rankBadge, debtSubline, money, baht } from './common.js';
+import { header, bindEye, rankBadge, debtSubline, money, baht, appTitleOf } from './common.js';
+import { t } from '../i18n.js';
 import { openDebtSheet } from './debt-sheet.js';
 
 const RING = 210;
@@ -32,7 +33,7 @@ function debtCard(app, { debt, rank, remaining, closed }) {
   const width = pct == null ? 0 : Math.min(100, pct / 10);
   return html`
     <li>
-      <button type="button" class="debt-card" data-id="${debt.id}" aria-label="แก้ไข ${debt.account}">
+      <button type="button" class="debt-card" data-id="${debt.id}" aria-label="${t('ov.editAria', { name: debt.account })}">
         <span class="debt-card__top">
           ${rankBadge(rank, closed)}
           <span class="debt-card__main">
@@ -41,9 +42,9 @@ function debtCard(app, { debt, rank, remaining, closed }) {
           </span>
           <span class="debt-card__side">
             ${closed
-              ? html`<span class="debt-card__closed">ปิดแล้ว</span>`
+              ? html`<span class="debt-card__closed">${t('ov.closed')}</span>`
               : html`<span class="debt-card__amt">${money(app, remaining)}</span>
-                     <span class="debt-card__pct">จ่ายแล้ว ${pctText}</span>`}
+                     <span class="debt-card__pct">${t('ov.paidPct', { pct: pctText })}</span>`}
           </span>
         </span>
         <span class="progress ${closed ? 'progress--done' : ''}" aria-hidden="true">
@@ -54,7 +55,7 @@ function debtCard(app, { debt, rank, remaining, closed }) {
 }
 
 export function renderOverview(view, app) {
-  const t = totals(app.debts, app.months);
+  const tot = totals(app.debts, app.months);
   const order = priorityOrder(app.debts, app.months);
   const active = order.filter((x) => !x.closed);
   const closed = order.filter((x) => x.closed);
@@ -62,18 +63,18 @@ export function renderOverview(view, app) {
   const tab = app.overviewTab;
   const list = tab === 'closed' ? closed : active;
 
-  const head = header(app, { eyebrow: monthLabel(app.currentKey), title: app.account.appTitle });
+  const head = header(app, { eyebrow: monthLabel(app.currentKey), title: appTitleOf(app.account) });
 
   if (app.debts.length === 0) {
     mount(view, html`
       ${head}
       <section class="empty-state">
         ${pig(140)}
-        <p class="empty-state__title">ยังไม่มีรายการหนี้</p>
-        <p class="empty-state__sub">เพิ่มหนี้แต่ละก้อนแล้วแอปจะเรียงให้ว่าควรจ่ายก้อนไหนก่อน</p>
-        <button type="button" class="btn btn--primary" id="add-first">${icons.plus(20)} เพิ่มหนี้ก้อนแรก</button>
+        <p class="empty-state__title">${t('ov.emptyTitle')}</p>
+        <p class="empty-state__sub">${t('ov.emptySub')}</p>
+        <button type="button" class="btn btn--primary" id="add-first">${icons.plus(20)} ${t('ov.addFirst')}</button>
         ${app.testMode ? html`
-          <button type="button" class="btn btn--ghost" id="load-sample">ใส่ข้อมูลตัวอย่าง (โหมดทดสอบ)</button>` : ''}
+          <button type="button" class="btn btn--ghost" id="load-sample">${t('ov.loadSample')}</button>` : ''}
       </section>`);
     bindEye(view, app);
     $('#add-first', view).addEventListener('click', () => openDebtSheet(app, {}));
@@ -81,38 +82,38 @@ export function renderOverview(view, app) {
     return undefined;
   }
 
-  const cheer = encouragement(t.progressTenths);
+  const cheer = encouragement(tot.progressTenths);
 
   mount(view, html`
     ${head}
-    <section class="ring-card" aria-label="ความคืบหน้าการปลดหนี้">
+    <section class="ring-card" aria-label="${t('ov.ringAria')}">
       <div class="ring">
-        ${ring(t.totalPaid, t.totalInitial)}
+        ${ring(tot.totalPaid, tot.totalInitial)}
         <div class="ring__center">
-          <span class="ring__label">ปลดไปแล้ว</span>
-          <span class="ring__pct">${formatPctOf(t.totalPaid, t.totalInitial)}</span>
-          <span class="ring__count">${t.closedCount} จาก ${t.debtCount} ก้อน</span>
+          <span class="ring__label">${t('ov.ringLabel')}</span>
+          <span class="ring__pct">${formatPctOf(tot.totalPaid, tot.totalInitial)}</span>
+          <span class="ring__count">${t('ov.ringCount', { closed: tot.closedCount, total: tot.debtCount })}</span>
         </div>
       </div>
       ${cheer ? html`<p class="ring-card__cheer">${cheer}</p>` : ''}
       <dl class="stats3">
-        <div><dt>ตั้งต้น</dt><dd>${baht(app, t.totalInitial)}</dd></div>
-        <div><dt>จ่ายแล้ว</dt><dd class="is-green">${baht(app, t.totalPaid)}</dd></div>
-        <div><dt>คงเหลือ</dt><dd class="is-accent">${baht(app, t.totalRemaining)}</dd></div>
+        <div><dt>${t('ov.initial')}</dt><dd>${baht(app, tot.totalInitial)}</dd></div>
+        <div><dt>${t('ov.paid')}</dt><dd class="is-green">${baht(app, tot.totalPaid)}</dd></div>
+        <div><dt>${t('ov.remaining')}</dt><dd class="is-accent">${baht(app, tot.totalRemaining)}</dd></div>
       </dl>
     </section>
 
-    <div class="tabs" role="tablist" aria-label="สถานะหนี้">
-      <button type="button" class="tabs__btn" role="tab" data-tab="active" aria-selected="${String(tab === 'active')}">ยังผ่อนอยู่ ${active.length}</button>
+    <div class="tabs" role="tablist" aria-label="${t('ov.tabsAria')}">
+      <button type="button" class="tabs__btn" role="tab" data-tab="active" aria-selected="${String(tab === 'active')}">${t('ov.tabActive', { n: active.length })}</button>
       <button type="button" class="tabs__btn" role="tab" data-tab="closed" aria-selected="${String(tab === 'closed')}"
-              ${closed.length === 0 ? html`disabled` : ''}>ปิดแล้ว ${closed.length}</button>
+              ${closed.length === 0 ? html`disabled` : ''}>${t('ov.tabClosed', { n: closed.length })}</button>
     </div>
 
     ${list.length
       ? html`<ul class="debt-list">${list.map((x) => debtCard(app, x))}</ul>`
-      : html`<p class="empty">ปิดหนี้ครบทุกก้อนแล้ว</p>`}
+      : html`<p class="empty">${t('ov.allClosed')}</p>`}
 
-    <button type="button" class="fab" id="fab" aria-label="เพิ่มหนี้">${icons.plus(30)}</button>`);
+    <button type="button" class="fab" id="fab" aria-label="${t('ov.fab')}">${icons.plus(30)}</button>`);
 
   bindEye(view, app);
   $$('.tabs__btn', view).forEach((b) => b.addEventListener('click', () => {

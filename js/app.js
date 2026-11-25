@@ -18,6 +18,8 @@ import { renderLogin } from './ui/login.js';
 import { createAppLock } from './ui/lock-screen.js';
 import { initPwa } from './pwa.js';
 import { initTheme } from './theme.js';
+import { initLang, t } from './i18n.js';
+import { appTitleOf } from './ui/common.js';
 import { currentMonthKey, parseMonthKey } from './dates.js';
 import { resolveMonth } from './calc.js';
 import { sampleData } from './sample-data.js';
@@ -212,10 +214,10 @@ async function runSave(fn) {
     const res = await fn();
     const list = Array.isArray(res) ? res : [res];
     const queued = list.some((r) => r?.queued);
-    showStatus(queued ? 'บันทึกในเครื่องแล้ว' : 'บันทึกแล้ว');
+    showStatus(queued ? t('save.queued') : t('save.saved'));
   } catch (err) {
     console.error(err);
-    showStatus('บันทึกไม่สำเร็จ ลองอีกครั้ง', { error: true });
+    showStatus(t('save.failed'), { error: true });
     throw err;
   }
 }
@@ -256,11 +258,11 @@ function tabbar(active) {
     <a class="tabbar__item ${active === name ? 'is-active' : ''}" href="${href}"
        ${active === name ? html`aria-current="page"` : ''}>${icon}<span>${label}</span></a>`;
   return html`
-    <nav class="tabbar" aria-label="เมนูหลัก">
-      ${tab('overview', '#/overview', icons.home(), 'ภาพรวม')}
-      ${tab('month', `#/month/${app.lastMonth}`, icons.calendar(), 'เดือนนี้')}
-      ${tab('year', `#/year/${year}`, icons.chart(), 'สรุปปี')}
-      ${tab('settings', '#/settings', icons.gear(), 'ตั้งค่า')}
+    <nav class="tabbar" aria-label="${t('nav.label')}">
+      ${tab('overview', '#/overview', icons.home(), t('nav.overview'))}
+      ${tab('month', `#/month/${app.lastMonth}`, icons.calendar(), t('nav.month'))}
+      ${tab('year', `#/year/${year}`, icons.chart(), t('nav.year'))}
+      ${tab('settings', '#/settings', icons.gear(), t('nav.settings'))}
     </nav>`;
 }
 
@@ -295,8 +297,8 @@ async function route({ keepScroll = false } = {}) {
     console.error(err);
     mount(view, html`
       <div class="empty" role="alert">
-        <p>แสดงหน้านี้ไม่สำเร็จ</p>
-        <button type="button" class="btn btn--primary" id="route-retry">ลองใหม่</button>
+        <p>${t('route.fail')}</p>
+        <button type="button" class="btn btn--primary" id="route-retry">${t('common.retry')}</button>
       </div>`);
     $('#route-retry', view).addEventListener('click', () => route());
   }
@@ -316,7 +318,7 @@ async function reload() {
   app.debts = debts;
   app.months = months;
   lastLoad = Date.now();
-  document.title = account.appTitle;
+  document.title = appTitleOf(account);
   await route({ keepScroll: true });
 }
 
@@ -348,9 +350,9 @@ const RELOAD_AFTER_MS = 60 * 1000;
 
 function showFatal(text) {
   mount($('#app'), html`
-    <main class="login"><div class="login__hero"><h1 class="login__title">กระปุกปลดหนี้</h1>
+    <main class="login"><div class="login__hero"><h1 class="login__title">${t('app.name')}</h1>
     <p class="login__sub">${text}</p></div>
-    <button type="button" class="btn btn--primary btn--block" id="retry">ลองใหม่</button></main>`);
+    <button type="button" class="btn btn--primary btn--block" id="retry">${t('common.retry')}</button></main>`);
   $('#retry').addEventListener('click', () => location.reload());
 }
 
@@ -363,6 +365,7 @@ function useLocalMode() {
 
 async function start() {
   initTheme();
+  initLang();
   initPwa();
   if (useLocalMode()) {
     app.testMode = true;
@@ -379,7 +382,7 @@ async function start() {
   const problem = configProblem();
   if (problem) { showFatal(problem); return; }
 
-  mount($('#app'), html`<p class="boot" role="status">กำลังโหลด…</p>`);
+  mount($('#app'), html`<p class="boot" role="status">${t('common.loading')}</p>`);
   let fb;
   let user;
   try {
@@ -387,7 +390,7 @@ async function start() {
     user = await currentUser();
   } catch (err) {
     console.error(err);
-    showFatal('โหลดแอปไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+    showFatal(t('fatal.loadApp'));
     return;
   }
 
@@ -422,8 +425,8 @@ async function start() {
     } catch (err) {
       console.error(err);
       showFatal(err?.code === 'permission-denied'
-        ? 'ไม่มีสิทธิ์อ่านข้อมูล (ตรวจ firestore.rules ใน Firebase console)'
-        : 'โหลดข้อมูลไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่');
+        ? t('fatal.perm')
+        : t('fatal.loadData'));
     }
   };
 
@@ -433,5 +436,5 @@ async function start() {
 
 start().catch((err) => {
   console.error(err);
-  showFatal('เปิดแอปไม่สำเร็จ');
+  showFatal(t('fatal.open'));
 });

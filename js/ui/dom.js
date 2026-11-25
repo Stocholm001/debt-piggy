@@ -1,6 +1,7 @@
 // ui/dom.js — helper เล็ก ๆ สำหรับสร้าง DOM (ยกจาก salary-calc ตัด i18n ออก)
 
 import { formatMoneyTyping } from '../format.js';
+import { t } from '../i18n.js';
 
 const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
@@ -39,7 +40,7 @@ export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
  * กล่องให้เลือก (<dialog>) คืน Promise ของ value ที่เลือก หรือ null ถ้ายกเลิก
  * options: [{ label, value, tone?: "primary"|"danger"|"plain"|"ghost" }]
  */
-export function choose({ title, message = '', options, cancelLabel = 'ยกเลิก' }) {
+export function choose({ title, message = '', options, cancelLabel = t('common.cancel') }) {
   return new Promise((resolve) => {
     const dlg = document.createElement('dialog');
     dlg.className = 'choice';
@@ -73,7 +74,7 @@ export async function confirmDialog({ title, message = '', okLabel, tone = 'prim
  * ช่องกรอกข้อความใน dialog (แทน prompt()) → Promise<string|null>
  * validate(value) คืนข้อความ error หรือ '' ถ้าผ่าน
  */
-export function askText({ title, label, value = '', maxLength = 40, okLabel = 'บันทึก', validate = () => '' }) {
+export function askText({ title, label, value = '', maxLength = 40, okLabel = t('common.save'), validate = () => '' }) {
   return new Promise((resolve) => {
     const dlg = document.createElement('dialog');
     dlg.className = 'choice';
@@ -87,7 +88,7 @@ export function askText({ title, label, value = '', maxLength = 40, okLabel = '�
         </label>
         <div class="choice__actions">
           <button class="btn btn--primary" value="ok">${okLabel}</button>
-          <button class="btn btn--ghost" value="" formnovalidate>ยกเลิก</button>
+          <button class="btn btn--ghost" value="" formnovalidate>${t('common.cancel')}</button>
         </div>
       </form>`);
     document.body.append(dlg);

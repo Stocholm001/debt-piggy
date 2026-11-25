@@ -1,5 +1,6 @@
 // ui/pinpad.js — จุด 6 จุด + แป้นตัวเลข 3×4 (1–9, ว่าง, 0, ลบ) ใช้ทั้งหน้าล็อกอิน ล็อกแอป และเปลี่ยน PIN (ยกจาก salary-calc)
 
+import { t } from '../i18n.js';
 import { html, mount, $ } from './dom.js';
 
 const BACKSPACE = `<svg class="icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m11 9 6 6M17 9l-6 6"/></svg>`;
@@ -23,7 +24,7 @@ export function createPinPad(root, { onComplete, length = 6 }) {
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button type="button" class="pin__key" data-key="${n}">${n}</button>`)}
         <span></span>
         <button type="button" class="pin__key" data-key="0">0</button>
-        <button type="button" class="pin__key pin__key--del" data-key="del" aria-label="ลบ">${{ __html: BACKSPACE }}</button>
+        <button type="button" class="pin__key pin__key--del" data-key="del" aria-label="${t('pin.del')}">${{ __html: BACKSPACE }}</button>
       </div>
     </div>`);
 
@@ -32,7 +33,7 @@ export function createPinPad(root, { onComplete, length = 6 }) {
 
   function draw() {
     dots.forEach((d, i) => d.classList.toggle('is-on', i < pin.length));
-    $('#pin-count', root).textContent = `กรอกแล้ว ${pin.length} จาก ${length} หลัก`;
+    $('#pin-count', root).textContent = t('pin.count', { n: pin.length, len: length });
   }
 
   let locked = false;

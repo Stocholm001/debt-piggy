@@ -1,4 +1,4 @@
-// ui/login.js — ล็อกอิน: กรอกชื่อ (D01) → PIN (D02) (ยกจาก salary-calc ตัดสวิตช์ภาษาออก)
+// ui/login.js — ล็อกอิน: กรอกชื่อ (D01) → PIN (D02) (ยกจาก salary-calc มีสวิตช์ภาษา TH | EN ด้านบน)
 //   ปุ่ม "เข้าสู่ระบบ" → ชื่อต้องมีบัญชีแล้ว → กรอก PIN (ผิดครบ 3 ครั้ง ล็อก 1 นาที)
 //   ปุ่ม "สมัครใช้งาน" → ฟอร์มสมัคร (ชื่อผู้ใช้*, ชื่อ*, นามสกุล, วันเกิด) → ตั้ง PIN → ยืนยัน PIN
 
@@ -7,15 +7,15 @@ import {
 } from '../auth.js';
 import {
   normalizeUsername, validateUsername, checkNewUsername, getRecentNames, addRecentName, removeRecentName,
-  USERNAME_RULES,
+  usernameRules,
 } from '../username.js';
 import { lockRemaining, recordFail, clearFails, formatWait } from '../lockout.js';
 import { validateProfile, todayIso } from '../profile.js';
 import { html, mount, $ } from './dom.js';
 import { pig, icons } from './icons.js';
 import { createPinPad } from './pinpad.js';
-
-const APP_NAME = 'กระปุกปลดหนี้';
+import { langToggle, bindLangToggle } from './lang-toggle.js';
+import { t } from '../i18n.js';
 
 /**
  * @param root
@@ -27,42 +27,48 @@ export function renderLogin(root, { onSignedIn }) {
   let leavePin = () => {}; // หยุดนับถอยหลังของหน้า PIN
   let regValues = null;    // ค่าที่กรอกในฟอร์มสมัคร (กลับมาแก้ได้จากหน้า PIN)
   let regProfile = null;   // ข้อมูลส่วนตัวที่ตรวจแล้ว ใช้ตอนสร้างบัญชี
+  // ขั้นตอนปัจจุบัน ใช้วาดใหม่ตอนเปลี่ยนภาษา
+  let redraw = () => showName();
+  const top = () => html`<div class="login__top">${langToggle()}</div>`;
+  const unbindLang = bindLangToggle(root, () => redraw());
 
   // ---------- D01: กรอกชื่อ ----------
   function showName(prefill = '', error = '') {
     leavePin();
     pad?.destroy(); pad = null;
+    redraw = () => showName($('#name', root)?.value ?? prefill, '');
     const recent = getRecentNames(localStorage);
     mount(root, html`
       <main class="login">
+        ${top()}
         <div class="login__hero">
           ${pig(150)}
-          <h1 class="login__title">${APP_NAME}</h1>
-          <p class="login__sub">กรอกชื่อของคุณเพื่อเข้าใช้งาน</p>
+          <h1 class="login__title">${t('app.name')}</h1>
+          <p class="login__sub">${t('login.sub')}</p>
         </div>
         <form class="login__form" id="name-form" novalidate>
           <label class="field">
-            <span class="field__label">ชื่อผู้ใช้</span>
+            <span class="field__label">${t('login.username')}</span>
             <input class="input" id="name" type="text" autocomplete="username" autocapitalize="none"
                    spellcheck="false" maxlength="40" value="${prefill}" aria-describedby="name-err" required>
             <span class="field__error" id="name-err" role="alert">${error}</span>
           </label>
-          <button type="submit" class="btn btn--primary btn--block btn--rect" id="go">เข้าสู่ระบบ</button>
-          <button type="button" class="btn btn--ghost btn--block btn--rect" id="register">สมัครใช้งาน</button>
+          <button type="submit" class="btn btn--primary btn--block btn--rect" id="go">${t('login.go')}</button>
+          <button type="button" class="btn btn--ghost btn--block btn--rect" id="register">${t('login.register')}</button>
         </form>
         ${recent.length ? html`
           <section class="login__recent" aria-labelledby="recent-lbl">
-            <h2 class="field__label" id="recent-lbl">ใช้ล่าสุดในเครื่องนี้</h2>
+            <h2 class="field__label" id="recent-lbl">${t('login.recent')}</h2>
             <div class="login__chips">
               ${recent.map((r) => html`
                 <span class="name-chip">
                   <button type="button" class="name-chip__name" data-name="${r.name}">${r.name}</button>
                   <button type="button" class="name-chip__x" data-remove="${r.username}"
-                          aria-label="เอา ${r.name} ออกจากเครื่องนี้">${icons.close(16)}</button>
+                          aria-label="${t('login.forget', { name: r.name })}">${icons.close(16)}</button>
                 </span>`)}
             </div>
           </section>` : ''}
-        <p class="login__foot">ยังไม่มีบัญชี กด "สมัครใช้งาน" เพื่อตั้งชื่อและ PIN 6 หลัก</p>
+        <p class="login__foot">${t('login.foot')}</p>
       </main>`);
 
     const input = $('#name', root);
@@ -99,12 +105,12 @@ export function renderLogin(root, { onSignedIn }) {
     const btn = $('#go', root);
     const buttons = [$('#go', root), $('#register', root)];
     buttons.forEach((b) => { b.disabled = true; });
-    btn.textContent = 'กำลังตรวจสอบ…';
-    const restore = () => { buttons.forEach((b) => { b.disabled = false; }); btn.textContent = 'เข้าสู่ระบบ'; };
+    btn.textContent = t('common.checking');
+    const restore = () => { buttons.forEach((b) => { b.disabled = false; }); btn.textContent = t('login.go'); };
     try {
       await initFirebase();
       const exists = await usernameExists(username);
-      if (!exists) { restore(); errEl.textContent = 'ไม่พบชื่อนี้ ถ้ายังไม่มีบัญชี กด "สมัครใช้งาน"'; return; }
+      if (!exists) { restore(); errEl.textContent = t('login.notFound'); return; }
       showPin(username, 'enter');
     } catch (e) {
       console.error(e);
@@ -124,6 +130,7 @@ export function renderLogin(root, { onSignedIn }) {
       lastName: $('#r-last', root).value,
       birthday: $('#r-birth', root).value,
     });
+    redraw = () => showRegister(read());
     const field = (id, key, label, input, hint = '', hintId = '') => html`
       <label class="field">
         <span class="field__label">${label}</span>
@@ -133,28 +140,29 @@ export function renderLogin(root, { onSignedIn }) {
       </label>`;
     mount(root, html`
       <main class="login">
+        ${top()}
         <div class="login__hero login__hero--small">
           ${pig(96)}
-          <h1 class="login__title">สมัครใช้งาน</h1>
-          <p class="login__sub">กรอกข้อมูลแล้วตั้ง PIN 6 หลัก</p>
+          <h1 class="login__title">${t('login.register')}</h1>
+          <p class="login__sub">${t('reg.sub')}</p>
         </div>
         <form class="login__form" id="reg-form" novalidate>
-          ${field('r-username', 'username', 'ชื่อผู้ใช้ (ไว้ล็อกอิน)', html`
+          ${field('r-username', 'username', t('prof.username'), html`
             <input class="input" id="r-username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off"
                    spellcheck="false" maxlength="20" lang="en"
-                   value="${v.username}" aria-describedby="r-username-hint r-username-err" required>`, USERNAME_RULES, 'r-username-hint')}
-          ${field('r-first', 'firstName', 'ชื่อ', html`
+                   value="${v.username}" aria-describedby="r-username-hint r-username-err" required>`, usernameRules(), 'r-username-hint')}
+          ${field('r-first', 'firstName', t('prof.first'), html`
             <input class="input" id="r-first" type="text" autocomplete="given-name" maxlength="40"
                    value="${v.firstName}" aria-describedby="r-first-err" required>`)}
-          ${field('r-last', 'lastName', 'นามสกุล · ไม่บังคับ', html`
+          ${field('r-last', 'lastName', t('prof.last'), html`
             <input class="input" id="r-last" type="text" autocomplete="family-name" maxlength="40"
                    value="${v.lastName}" aria-describedby="r-last-err">`)}
-          ${field('r-birth', 'birthday', 'วันเกิด · ไม่บังคับ', html`
+          ${field('r-birth', 'birthday', t('prof.birth'), html`
             <input class="input" id="r-birth" type="date" autocomplete="bday" min="1900-01-01" max="${todayIso()}"
                    value="${v.birthday}" aria-describedby="r-birth-err">`)}
-          <button type="submit" class="btn btn--primary btn--block btn--rect" id="r-next">ถัดไป: ตั้ง PIN</button>
+          <button type="submit" class="btn btn--primary btn--block btn--rect" id="r-next">${t('reg.next')}</button>
         </form>
-        <button type="button" class="link-back" id="r-back">← มีบัญชีแล้ว เข้าสู่ระบบ</button>
+        <button type="button" class="link-back" id="r-back">${t('reg.back')}</button>
       </main>`);
 
     const idOf = { username: '#r-username', firstName: '#r-first', lastName: '#r-last', birthday: '#r-birth' };
@@ -183,17 +191,17 @@ export function renderLogin(root, { onSignedIn }) {
 
       const btn = $('#r-next', root);
       btn.disabled = true;
-      btn.textContent = 'กำลังตรวจสอบ…';
+      btn.textContent = t('common.checking');
       try {
         await initFirebase();
         if (await usernameExists(username)) {
-          showRegister(vals, { username: 'ชื่อนี้มีคนใช้แล้ว ถ้าเป็นบัญชีของคุณ กด "เข้าสู่ระบบ"' });
+          showRegister(vals, { username: t('reg.taken') });
           return;
         }
       } catch (err) {
         console.error(err);
         btn.disabled = false;
-        btn.textContent = 'ถัดไป: ตั้ง PIN';
+        btn.textContent = t('reg.next');
         $('#r-username-err', root).textContent = authErrorMessage(err);
         return;
       }
@@ -209,22 +217,24 @@ export function renderLogin(root, { onSignedIn }) {
   function showPin(username, mode, firstPin = '', message = '') {
     leavePin();
     pad?.destroy();
+    redraw = () => showPin(username, mode, firstPin, '');
     const title = {
-      enter: `กรอก PIN 6 หลักของ ${typedName}`,
-      create: `ตั้ง PIN 6 หลักสำหรับ ${regProfile?.firstName || typedName}`,
-      confirm: 'กรอก PIN อีกครั้งเพื่อยืนยัน',
+      enter: t('login.pinEnter', { name: typedName }),
+      create: t('login.pinCreate', { name: regProfile?.firstName || typedName }),
+      confirm: t('login.pinConfirm'),
     }[mode];
 
     mount(root, html`
       <main class="login login--pin">
+        ${top()}
         <div class="login__hero">
           ${pig(110)}
           <h1 class="login__pin-title">${title}</h1>
         </div>
         <div id="pad"></div>
         <p class="login__msg" id="pin-msg" role="alert">${message}</p>
-        <button type="button" class="link-back" id="back">${mode === 'enter' ? '← เปลี่ยนชื่อ' : '← แก้ข้อมูลที่กรอก'}</button>
-        <p class="login__foot">${mode === 'enter' ? 'PIN ผิด 3 ครั้ง ระบบจะล็อก 1 นาที' : 'ตั้ง PIN แล้วกรอกยืนยันอีกครั้ง'}</p>
+        <button type="button" class="link-back" id="back">${mode === 'enter' ? t('login.backName') : t('login.backEdit')}</button>
+        <p class="login__foot">${mode === 'enter' ? t('login.footEnter') : t('login.footCreate')}</p>
       </main>`);
 
     $('#back', root).addEventListener('click', () => (mode === 'enter' ? showName(typedName) : showRegister(regValues ?? {})));
@@ -237,7 +247,7 @@ export function renderLogin(root, { onSignedIn }) {
       const tick = () => {
         const ms = lockRemaining(localStorage, username);
         if (!ms) { stopLock(); pad?.lock(false); msg.textContent = ''; return; }
-        msg.textContent = `ใส่ PIN ผิด 3 ครั้ง รออีก ${formatWait(ms)} นาทีแล้วลองใหม่`;
+        msg.textContent = t('pin.locked', { wait: formatWait(ms) });
       };
       pad.lock(true);
       stopLock();
@@ -256,10 +266,10 @@ export function renderLogin(root, { onSignedIn }) {
         }
         if (mode === 'confirm' && pin !== firstPin) {
           pad.shake();
-          setTimeout(() => showPin(username, 'create', '', 'PIN ไม่ตรงกัน ตั้งใหม่อีกครั้ง'), 450);
+          setTimeout(() => showPin(username, 'create', '', t('pin.mismatch')), 450);
           return;
         }
-        msg.textContent = mode === 'enter' ? 'กำลังเข้าสู่ระบบ…' : 'กำลังสร้างบัญชี…';
+        msg.textContent = mode === 'enter' ? t('login.signingIn') : t('login.creating');
         try {
           if (mode === 'enter') await signIn(username, pin);
           else await signUp(username, regProfile, pin);
@@ -267,6 +277,7 @@ export function renderLogin(root, { onSignedIn }) {
           clearFails(localStorage, username);
           stopLock();
           pad.destroy();
+          unbindLang();
           await onSignedIn();
         } catch (e) {
           console.error(e);
@@ -275,7 +286,7 @@ export function renderLogin(root, { onSignedIn }) {
             const r = recordFail(localStorage, username);
             pad.shake();
             if (r.lockedMs) applyLock();
-            else msg.textContent = `PIN ไม่ถูกต้อง เหลืออีก ${r.left} ครั้ง`;
+            else msg.textContent = t('pin.wrongLeft', { n: r.left });
             return;
           }
           if (isWrongPin(e) || e?.code === 'auth/too-many-requests') pad.shake();
@@ -291,5 +302,5 @@ export function renderLogin(root, { onSignedIn }) {
   }
 
   showName();
-  return () => { leavePin(); pad?.destroy(); };
+  return () => { leavePin(); pad?.destroy(); unbindLang(); };
 }

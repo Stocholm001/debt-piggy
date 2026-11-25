@@ -7,6 +7,7 @@ import { formatMoney, parseMoney, parsePercent, moneyFieldValue, pctFieldValue }
 import { html, $, openSheet, bindMoneyInputs, confirmDialog, toast } from './dom.js';
 import { icons } from './icons.js';
 import { newId } from './common.js';
+import { t } from '../i18n.js';
 
 /** ยอดที่บันทึกจ่ายไว้ทุกเดือน (ไม่ตัดด้วยยอดตั้งต้น ใช้เตือนตอนลดยอดตั้งต้น) */
 function storedPaidAll(debt, months) {
@@ -29,18 +30,18 @@ export function openDebtSheet(app, { debt = null } = {}) {
     <form class="sheet__form" novalidate>
       <div class="sheet__grip" aria-hidden="true"></div>
       <div class="sheet__head">
-        <h2 class="sheet__title" id="debt-title">${editing ? 'แก้ไขหนี้' : 'เพิ่มหนี้'}</h2>
-        <button type="button" class="icon-btn" data-close aria-label="ปิด">${icons.close()}</button>
+        <h2 class="sheet__title" id="debt-title">${editing ? t('d.edit') : t('d.add')}</h2>
+        <button type="button" class="icon-btn" data-close aria-label="${t('common.close')}">${icons.close()}</button>
       </div>
 
       <div class="row-debt">
         <label class="field">
-          <span class="field__label">เจ้าหนี้</span>
-          <input class="input" name="creditor" maxlength="60" autocomplete="off" placeholder="เช่น SCB, KTB"
+          <span class="field__label">${t('d.creditor')}</span>
+          <input class="input" name="creditor" maxlength="60" autocomplete="off" placeholder="${t('d.creditorPh')}"
                  value="${debt?.creditor ?? ''}">
         </label>
         <label class="field">
-          <span class="field__label">ชื่อบัญชี/รายการ *</span>
+          <span class="field__label">${t('d.account')}</span>
           <input class="input" name="account" maxlength="60" autocomplete="off" required
                  aria-describedby="err-account" value="${debt?.account ?? ''}">
           <span class="field__error" id="err-account" aria-live="polite"></span>
@@ -48,44 +49,44 @@ export function openDebtSheet(app, { debt = null } = {}) {
       </div>
 
       <label class="field">
-        <span class="field__label">ยอดตั้งต้น (บาท) *</span>
+        <span class="field__label">${t('d.initial')}</span>
         <input class="input input--big" name="initial" inputmode="decimal" autocomplete="off" required
                aria-describedby="err-initial hint-initial" value="${moneyFieldValue(debt?.initialSatang ?? 0)}">
         <span class="field__error" id="err-initial" aria-live="polite"></span>
         ${editing ? html`
-          <span class="field__hint" id="hint-initial">จ่ายแล้วรวม ${formatMoney(paidAll)} · แก้เพิ่มได้เมื่อมีดอกเบี้ยสะสม</span>
+          <span class="field__hint" id="hint-initial">${t('d.paidHint', { amount: formatMoney(paidAll) })}</span>
           <span class="field__warn" id="warn-initial" aria-live="polite"></span>` : ''}
       </label>
 
       <div class="row2">
         <label class="field">
-          <span class="field__label">ดอกเบี้ย (%/ปี)</span>
+          <span class="field__label">${t('d.rate')}</span>
           <input class="input" name="rate" inputmode="decimal" autocomplete="off" aria-describedby="err-rate"
                  value="${editing ? pctFieldValue(debt.rateBp) : ''}">
           <span class="field__error" id="err-rate" aria-live="polite"></span>
         </label>
         <label class="field">
-          <span class="field__label">วันครบกำหนด</span>
-          <input class="input" name="due" maxlength="40" autocomplete="off" placeholder="เช่น ทุกวันที่ 15"
+          <span class="field__label">${t('d.due')}</span>
+          <input class="input" name="due" maxlength="40" autocomplete="off" placeholder="${t('d.duePh')}"
                  value="${debt?.due ?? ''}">
         </label>
       </div>
 
       <label class="field">
-        <span class="field__label">เริ่มนับตั้งแต่เดือน</span>
+        <span class="field__label">${t('d.start')}</span>
         <select class="select" name="startMonth">
           ${opts.map((k) => html`<option value="${k}" ${k === startDefault ? html`selected` : ''}>${monthLabel(k)}</option>`)}
         </select>
       </label>
 
       ${closed ? html`
-        <button type="button" class="btn btn--plain btn--block" id="reopen">${icons.refresh()} เปิดใช้ใหม่</button>` : ''}
+        <button type="button" class="btn btn--plain btn--block" id="reopen">${icons.refresh()} ${t('d.reopen')}</button>` : ''}
       ${editing ? html`
-        <button type="button" class="btn btn--danger btn--block" id="delete">${icons.trash()} ลบหนี้นี้</button>` : ''}
+        <button type="button" class="btn btn--danger btn--block" id="delete">${icons.trash()} ${t('d.delete')}</button>` : ''}
 
       <div class="sheet__actions">
-        <button type="button" class="btn btn--ghost" data-close>ยกเลิก</button>
-        <button type="submit" class="btn btn--primary">บันทึก</button>
+        <button type="button" class="btn btn--ghost" data-close>${t('common.cancel')}</button>
+        <button type="submit" class="btn btn--primary">${t('common.save')}</button>
       </div>
     </form>`, { labelledBy: 'debt-title' });
 
@@ -104,7 +105,7 @@ export function openDebtSheet(app, { debt = null } = {}) {
   const updateWarn = () => {
     if (!warnEl) return;
     const v = parseMoney(f.initial.value);
-    warnEl.textContent = v != null && v < paidAll ? 'ยอดตั้งต้นน้อยกว่ายอดที่จ่ายแล้ว ก้อนนี้จะถือว่าปิดแล้ว' : '';
+    warnEl.textContent = v != null && v < paidAll ? t('d.warnLow') : '';
   };
   f.initial.addEventListener('input', () => { setError('initial', ''); updateWarn(); });
   f.account.addEventListener('input', () => setError('account', ''));
@@ -119,11 +120,11 @@ export function openDebtSheet(app, { debt = null } = {}) {
 
     let firstBad = null;
     const bad = (name, msg) => { setError(name, msg); firstBad ??= name; };
-    if (!account) bad('account', 'กรอกชื่อบัญชีหรือรายการ');
-    if (initial == null) bad('initial', f.initial.value.trim() ? 'กรอกเป็นตัวเลข ทศนิยมไม่เกิน 2 ตำแหน่ง' : 'กรอกยอดตั้งต้น');
-    else if (initial <= 0) bad('initial', 'ยอดตั้งต้นต้องมากกว่า 0');
-    if (rate == null) bad('rate', 'กรอกเป็นตัวเลข เช่น 15 หรือ 12.5');
-    else if (rate > 99999) bad('rate', 'ดอกเบี้ยสูงเกินไป');
+    if (!account) bad('account', t('d.errAccount'));
+    if (initial == null) bad('initial', f.initial.value.trim() ? t('err.number') : t('d.errInitial'));
+    else if (initial <= 0) bad('initial', t('d.errInitialPos'));
+    if (rate == null) bad('rate', t('d.errRate'));
+    else if (rate > 99999) bad('rate', t('d.errRateHigh'));
     if (firstBad) { f[firstBad].focus(); return; }
 
     const next = {
@@ -149,32 +150,32 @@ export function openDebtSheet(app, { debt = null } = {}) {
 
   $('#delete', dlg)?.addEventListener('click', async () => {
     const ok = await confirmDialog({
-      title: 'ลบหนี้นี้?',
-      message: `ลบ "${debt.account}" และยอดชำระทุกเดือนของก้อนนี้?\nลบแล้วเอาคืนไม่ได้`,
-      okLabel: 'ลบหนี้นี้',
+      title: t('d.delTitle'),
+      message: t('d.delMsg', { name: debt.account }),
+      okLabel: t('d.delete'),
       tone: 'danger',
     });
     if (!ok) return;
     try {
       await app.deleteDebt(debt.id);
       dlg.close();
-      toast(`ลบ ${debt.account} แล้ว`);
+      toast(t('d.deleted', { name: debt.account }));
       app.rerender();
     } catch { /* แสดงสถานะบันทึกไม่สำเร็จแล้ว */ }
   });
 
   $('#reopen', dlg)?.addEventListener('click', async () => {
     const ok = await confirmDialog({
-      title: 'เปิดใช้ใหม่?',
-      message: `เปิดใช้ "${debt.account}" ใหม่\nยอดชำระทุกเดือนของก้อนนี้จะถูกล้าง แล้วเริ่มนับจากยอดตั้งต้นใหม่`,
-      okLabel: 'ล้างยอดชำระและเปิดใช้ใหม่',
+      title: t('d.reopenTitle'),
+      message: t('d.reopenMsg', { name: debt.account }),
+      okLabel: t('d.reopenOk'),
       tone: 'danger',
     });
     if (!ok) return;
     try {
       await app.reopenDebt(debt.id);
       dlg.close();
-      toast(`เปิดใช้ ${debt.account} ใหม่แล้ว`);
+      toast(t('d.reopened', { name: debt.account }));
       app.rerender();
     } catch { /* แสดงสถานะบันทึกไม่สำเร็จแล้ว */ }
   });

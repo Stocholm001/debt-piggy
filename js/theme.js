@@ -1,6 +1,8 @@
 // theme.js — ธีมสี (design/THEMES.md) เลือกได้ในหน้าตั้งค่า จำแยกตามเครื่อง (localStorage)
 // ค่าสีอยู่ใน css/themes.css ที่นี่เก็บแค่ชื่อ, สีตัวอย่าง และสีแถบสถานะของมือถือ
 
+import { t } from './i18n.js';
+
 const THEME_KEY = 'debt-piggy:theme';
 
 export const THEMES = Object.freeze([
@@ -18,6 +20,9 @@ export const THEMES = Object.freeze([
 ]);
 
 export const DEFAULT_THEME = 'yellow';
+
+/** ชื่อธีมตามภาษา */
+export const themeName = (id) => t(`theme.${id}`);
 
 const find = (id) => THEMES.find((x) => x.id === id);
 

@@ -258,7 +258,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .salary-card { gap: 16px; }
 .salary-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .salary-card__text { min-width: 0; }
-.salary-card__label { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+.salary-card__label { color: var(--muted); font-size: .9rem; overflow-wrap: break-word; }
 .salary-card__value { font-size: 1.5rem; font-weight: 600; letter-spacing: .04em; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .salary-card__empty { font-weight: 500; margin-top: 4px; }
 .salary-card__draft { font-size: .8rem; color: var(--muted); }
@@ -586,3 +586,12 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   background: var(--accent); color: var(--on-accent); display: none; place-items: center;
 }
 .theme-opt[aria-checked="true"] .theme-opt__check { display: grid; }
+
+/* ---------- สวิตช์ภาษา TH | EN ---------- */
+.lang { display: inline-grid; grid-template-columns: 1fr 1fr; padding: 4px; gap: 2px; background: var(--line); border-radius: 999px; flex: none; }
+.lang__btn {
+  min-width: 48px; min-height: 40px; border: 0; border-radius: 999px; background: transparent;
+  font-weight: 600; font-size: .9rem; padding: 0 10px;
+}
+.lang__btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.login__top { display: flex; justify-content: flex-end; margin: -16px -8px 0 0; }

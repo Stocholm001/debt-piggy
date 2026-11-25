@@ -5,7 +5,8 @@
 import {
   yearSummary, monthTotals, priorityOrder, isInMonth, opening, pay, debtBudget,
 } from './calc.js';
-import { monthLabel, monthRange, toBE } from './dates.js';
+import { monthLabel, monthRange, yearNumber, toBE } from './dates.js';
+import { t } from './i18n.js';
 
 export const BOM = '﻿';
 
@@ -56,7 +57,7 @@ export const yearCsvFilename = (ceYear) => `debt-${toBE(ceYear)}.csv`;
  */
 export function yearCsv(debts, months, ceYear) {
   const y = yearSummary(debts, months, ceYear);
-  const rows = [['เดือน', 'ยอดต้นเดือนรวม', 'ชำระรวม', 'คงเหลือปลายเดือน', 'เงินเดือน', 'งบชำระหนี้']];
+  const rows = [['csv.month', 'csv.opening', 'csv.paid', 'csv.remaining', 'csv.salary', 'csv.budget'].map((k) => t(k))];
   let salarySum = 0;
   let budgetSum = 0;
   for (const m of y.months) {
@@ -69,7 +70,7 @@ export function yearCsv(debts, months, ceYear) {
     rows.push([monthLabel(m.key), money(t.monthOpening), money(t.monthPaid), money(t.monthRemaining),
       money(doc.salarySatang ?? 0), money(budget)]);
   }
-  rows.push([`รวมปี ${toBE(ceYear)}`, '', money(y.totalPaid),
+  rows.push([t('csv.yearTotal', { year: yearNumber(ceYear) }), '', money(y.totalPaid),
     y.endRemaining == null ? '' : money(y.endRemaining), money(salarySum), money(budgetSum)]);
   return toCsv(rows);
 }
@@ -88,7 +89,7 @@ export function backupFilename(now = new Date()) {
  * คอลัมน์: เดือน(YYYY-MM), เจ้าหนี้, ชื่อบัญชี, ดอก %/ปี, ยอดตั้งต้น, ยอดต้นเดือน, ชำระ, คงเหลือหลังชำระ
  */
 export function backupCsv(debts, months, currentKey) {
-  const rows = [['เดือน(YYYY-MM)', 'เจ้าหนี้', 'ชื่อบัญชี', 'ดอก %/ปี', 'ยอดตั้งต้น', 'ยอดต้นเดือน', 'ชำระ', 'คงเหลือหลังชำระ']];
+  const rows = [['csv.monthKey', 'csv.creditor', 'csv.account', 'csv.rate', 'csv.initial', 'csv.monthOpening', 'csv.pay', 'csv.after'].map((k) => t(k))];
   if (debts.length) {
     const first = debts.reduce((min, d) => (d.startMonth < min ? d.startMonth : min), debts[0].startMonth);
     const last = Object.keys(months).reduce((max, k) => (k > max ? k : max), currentKey);

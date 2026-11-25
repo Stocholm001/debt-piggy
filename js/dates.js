@@ -1,6 +1,9 @@
 // dates.js — ชื่อเดือนไทย, แปลง พ.ศ./ค.ศ., คีย์เดือน "YYYY-MM", เลื่อนเดือน
 // คีย์เดือนเป็น ค.ศ. เสมอ ("2026-11") แปลงเป็น พ.ศ. เฉพาะตอนแสดงผล
 // คีย์รูปแบบนี้เทียบลำดับด้วย < > ของ string ได้ตรง ๆ
+// ชื่อที่แสดงผลตามภาษาใน i18n.js (ไทยใช้ พ.ศ., อังกฤษใช้ ค.ศ.)
+
+import { getLang } from './i18n.js';
 
 export const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -11,6 +14,21 @@ export const THAI_MONTHS_SHORT = [
   'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ];
+
+export const EN_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+export const EN_MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const isEn = () => getLang() === 'en';
+/** ชื่อเดือนเต็ม/ย่อตามภาษา (month 1–12) */
+export const monthName = (m) => (isEn() ? EN_MONTHS : THAI_MONTHS)[m - 1];
+export const monthShortName = (m) => (isEn() ? EN_MONTHS_SHORT : THAI_MONTHS_SHORT)[m - 1];
+/** ปีสำหรับแสดงผล: ไทย 2569 (พ.ศ.), อังกฤษ 2026 */
+export const yearNumber = (ceYear) => (isEn() ? ceYear : ceYear + 543);
+/** ตัวเลือกปี: ไทย "พ.ศ. 2569", อังกฤษ "2026" */
+export const yearLabel = (ceYear) => (isEn() ? String(ceYear) : `พ.ศ. ${ceYear + 543}`);
 
 export const toBE = (ceYear) => ceYear + 543;
 export const toCE = (beYear) => beYear - 543;
@@ -73,16 +91,16 @@ export function monthsOfYear(ceYear) {
 /** "2026-11" → "พฤศจิกายน 2569" */
 export function monthLabel(key) {
   const p = mustParse(key);
-  return `${THAI_MONTHS[p.month - 1]} ${toBE(p.year)}`;
+  return `${monthName(p.month)} ${yearNumber(p.year)}`;
 }
 
 /** "2026-10" → "ต.ค." */
 export function monthShortLabel(key) {
-  return THAI_MONTHS_SHORT[mustParse(key).month - 1];
+  return monthShortName(mustParse(key).month);
 }
 
 /** "2026-10" → "ต.ค. 69" (ใช้ในกราฟ/ตาราง) */
 export function monthShortYearLabel(key) {
   const p = mustParse(key);
-  return `${THAI_MONTHS_SHORT[p.month - 1]} ${String(toBE(p.year)).slice(-2)}`;
+  return `${monthShortName(p.month)} ${String(yearNumber(p.year)).slice(-2)}`;
 }

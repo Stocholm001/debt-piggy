@@ -5,6 +5,7 @@
 import { firebaseConfig, AUTH_EMAIL_DOMAIN } from '../firebase-config.js';
 import { usernameToEmail } from './username.js';
 import { BUILTIN_CATS } from './calc.js';
+import { t } from './i18n.js';
 import { DEFAULT_APP_TITLE, DEFAULT_SETTINGS } from './sanitize.js';
 
 export const SDK_VERSION = '13.4.0'; // เวอร์ชันเดียวกับ salary-calc
@@ -19,7 +20,7 @@ export function configProblem(c = firebaseConfig ?? {}) {
   if (!/^[a-z0-9-]{4,}$/.test(c.projectId ?? '')) bad.push('projectId');
   if (!/^[\w.-]+$/.test(c.authDomain ?? '')) bad.push('authDomain');
   if (!/^\d+:\d+:web:[0-9a-f]+$/.test(c.appId ?? '')) bad.push('appId');
-  return bad.length ? `ค่าใน firebase-config.js ไม่ถูกต้อง: ${bad.join(', ')}` : null;
+  return bad.length ? t('config.bad', { fields: bad.join(', ') }) : null;
 }
 
 let fb = null;
@@ -156,21 +157,21 @@ export const isWrongPin = (err) => WRONG_PIN.includes(err?.code);
 
 /** แปลง error ของ Firebase เป็นข้อความภาษาไทย */
 export function authErrorMessage(err) {
-  if (isWrongPin(err)) return 'PIN ไม่ถูกต้อง ลองใหม่';
+  if (isWrongPin(err)) return t('auth.wrongPin');
   switch (err?.code) {
     case 'auth/too-many-requests':
-      return 'ลองผิดหลายครั้ง รอสักครู่แล้วลองใหม่';
+      return t('auth.tooMany');
     case 'auth/network-request-failed':
     case 'unavailable':
-      return 'เชื่อมต่อไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่';
+      return t('auth.network');
     case 'auth/operation-not-allowed':
     case 'auth/configuration-not-found':
-      return 'ยังไม่ได้เปิด Email/Password ใน Firebase console';
+      return t('auth.notEnabled');
     case 'auth/requires-recent-login':
-      return 'กรุณากรอก PIN เดิมอีกครั้ง';
+      return t('auth.reauth');
     case 'permission-denied':
-      return 'ไม่มีสิทธิ์เข้าถึงข้อมูล (ตรวจ firestore.rules)';
+      return t('auth.perm');
     default:
-      return 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
+      return t('auth.generic');
   }
 }

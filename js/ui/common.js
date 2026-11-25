@@ -2,6 +2,8 @@
 
 import { formatMoney, formatBaht, formatRate, HIDDEN } from '../format.js';
 import { html, $ } from './dom.js';
+import { t } from '../i18n.js';
+import { DEFAULT_APP_TITLE } from '../sanitize.js';
 import { icons } from './icons.js';
 
 /** เงิน 2 ตำแหน่ง ซ่อนเป็น •••••• เมื่อเปิดซ่อนตัวเลข */
@@ -19,7 +21,7 @@ export function header(app, { eyebrow, title, eye = true }) {
       </div>
       ${eye ? html`
         <button type="button" class="icon-btn" id="eye-btn" aria-pressed="${String(app.hidden)}"
-                aria-label="${app.hidden ? 'แสดงตัวเลข' : 'ซ่อนตัวเลข'}">
+                aria-label="${app.hidden ? t('eye.show') : t('eye.hide')}">
           ${app.hidden ? icons.eyeOff() : icons.eye()}
         </button>` : ''}
     </header>`;
@@ -33,9 +35,9 @@ export function bindEye(root, app) {
 /** ป้ายลำดับวงกลม: อันดับ 1 สี accent, ก้อนที่ปิดแล้วสีเขียว + เครื่องหมายถูก */
 export function rankBadge(rank, closed) {
   if (closed) {
-    return html`<span class="rank rank--closed" aria-label="ปิดแล้ว">${icons.check(18)}</span>`;
+    return html`<span class="rank rank--closed" aria-label="${t('rank.closed')}">${icons.check(18)}</span>`;
   }
-  return html`<span class="rank ${rank === 1 ? 'rank--first' : ''}" aria-label="ลำดับที่ ${rank}">${rank}</span>`;
+  return html`<span class="rank ${rank === 1 ? 'rank--first' : ''}" aria-label="${t('rank.n', { n: rank })}">${rank}</span>`;
 }
 
 /** บรรทัดรอง: "KTB · ดอก 40%/ปี · ทุกวันที่ 19" (ไม่มีข้อมูลส่วนไหนก็ไม่แสดงส่วนนั้น) */
@@ -53,3 +55,9 @@ export function newId(prefix) {
 /** สีของหมวดงบ: หมวดในตัวใช้สีของธีม (design/THEMES.md) หมวดที่เพิ่มเองใช้สีที่เก็บไว้ */
 const BUILTIN_CAT_VAR = { debt: 'var(--accent)', saving: 'var(--paid)', living: 'var(--bar)', other: 'var(--pig-dark)' };
 export const catColor = (c) => BUILTIN_CAT_VAR[c.key] ?? c.color;
+
+/** ชื่อหมวดงบ: หมวดในตัวแปลตามภาษา หมวดที่เพิ่มเองใช้ชื่อที่ตั้งไว้ */
+export const catLabel = (c) => (c.builtIn ? t(`cat.${c.key}`) : c.label);
+
+/** ชื่อแอปบนหน้าภาพรวม: ถ้ายังเป็นชื่อเริ่มต้นให้แปลตามภาษา */
+export const appTitleOf = (acc) => (!acc?.appTitle || acc.appTitle === DEFAULT_APP_TITLE ? t('app.name') : acc.appTitle);
