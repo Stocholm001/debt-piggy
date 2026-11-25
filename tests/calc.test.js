@@ -294,14 +294,6 @@ test('ช่วงเดือนใน select: min(startMonth, เดือน�
   assert.deepEqual(monthOptions([], NOV).slice(0, 2), ['2026-11', '2026-12']);
 });
 
-test('openingOverride ใช้แทนยอดคำนวณเฉพาะเดือนนั้น', () => {
-  const { debts, months } = sampleData();
-  const d = debts[0];
-  months[OCT].openingOverride = { [d.id]: 5000000 };
-  assert.equal(opening(d, months, OCT), 5000000);
-  assert.equal(opening(d, months, NOV), 4111758); // เดือนถัดไปกลับไปคิดจาก initial − ยอดจ่าย
-});
-
 test('สีหมวดที่เพิ่มเอง: สีถัดไปที่ยังไม่ใช้', () => {
   assert.equal(nextCatColor([...BUILTIN_CATS]), CAT_PALETTE[0]);
   assert.equal(nextCatColor([...BUILTIN_CATS, { key: 'c1', color: '#ff8c00' }]), CAT_PALETTE[1]);

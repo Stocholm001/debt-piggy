@@ -7,7 +7,7 @@
 //
 // รูปข้อมูล (SPEC ข้อ 6.1):
 //   debt   = { id, creditor, account, initialSatang, rateBp, due, startMonth: "YYYY-MM", createdAt: ms }
-//   months = { "YYYY-MM": { salarySatang, allocBp: {key: bp}, payments: {debtId: satang}, openingOverride?: {debtId: satang} } }
+//   months = { "YYYY-MM": { salarySatang, allocBp: {key: bp}, payments: {debtId: satang} } }
 //   createdAt เป็นตัวเลข ms (store แปลง Timestamp ของ Firestore ก่อนส่งเข้ามา)
 
 import { addMonths, prevMonth, monthRange, monthsOfYear } from './dates.js';
@@ -73,13 +73,10 @@ export function paidBefore(debt, months, M) {
 
 /**
  * ยอดต้นเดือน = max(0, initial − paidBefore)
- * ถ้าเดือน M มี openingOverride[debtId] (ข้อมูลเก่าจาก initialOverride) ใช้ค่านั้นแทน (มีผลเฉพาะเดือนนั้น เหมือนแอปเดิม)
  * เดือนที่ < startMonth ไม่มีก้อนนี้ → 0
  */
 export function opening(debt, months, M) {
   if (!isInMonth(debt, M)) return 0;
-  const override = months[M]?.openingOverride?.[debt.id];
-  if (override != null) return toSafeInt(override);
   return Math.max(0, toSafeInt(debt.initialSatang) - paidBefore(debt, months, M));
 }
 
@@ -304,7 +301,6 @@ export function resolveMonth(months, M) {
       salarySatang: toSafeInt(doc.salarySatang),
       allocBp: { ...DEFAULT_ALLOC_BP, ...(doc.allocBp ?? {}) },
       payments: { ...(doc.payments ?? {}) },
-      openingOverride: { ...(doc.openingOverride ?? {}) },
       draft: false,
     };
   }
@@ -314,7 +310,6 @@ export function resolveMonth(months, M) {
     salarySatang: toSafeInt(src?.salarySatang),
     allocBp: { ...DEFAULT_ALLOC_BP, ...(src?.allocBp ?? {}) },
     payments: {},
-    openingOverride: {},
     draft: true,
   };
 }
