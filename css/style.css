@@ -1,0 +1,54 @@
+/* style.css — กระปุกปลดหนี้ (ธีมหมูกระปุก, design tokens ตาม SPEC ข้อ 4 = ค่าเดียวกับ salary-calc) */
+
+:root {
+  --bg: #FFF8DC;
+  --ink: #4A3500;
+  --muted: #6B5200;
+  --line: #F5E3A1;
+  --card: #FFFFFF;
+  --card-hi: #FFE89A;
+  --accent: #B4441A;
+  --green: #2F6B45;
+  --green-bg: #DCEBD9;
+  --bar: #E9B949;
+  --pig: #FFC2D4;
+  --pig-dark: #FFA8C1;
+  --warn-bg: #FFD9CC;
+  --warn-ink: #8A1F00;
+
+  --r-input: 14px;
+  --r-card: 20px;
+  --r-big: 28px;
+  --tap: 44px;
+  --tabbar-h: 68px;
+
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+/* touch-action: pan-x pan-y = เลื่อนได้อย่างเดียว ไม่ซูมทั้งแตะสองครั้งและสองนิ้ว (ดู index.html ด้วย) */
+html { -webkit-text-size-adjust: 100%; touch-action: pan-x pan-y; }
+button, a, input, select, label, [role="button"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Mitr', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.45;
+  min-width: 320px;
+}
+
+#app { max-width: 480px; margin: 0 auto; min-height: 100dvh; }
+
+.placeholder { padding: 48px 24px; text-align: center; }
+.placeholder h1 { font-weight: 600; margin: 0 0 8px; }
+.placeholder p { color: var(--muted); margin: 0; }
+
+/* หน้าแจ้งโหลดโค้ดไม่สำเร็จ (index.html) */
+#boot-fail { padding: 48px 24px; text-align: center; }
+#boot-fail button {
+  min-height: var(--tap); padding: 0 24px; border: 0; border-radius: 999px;
+  background: var(--accent); color: #fff; font: inherit; font-weight: 500;
+}

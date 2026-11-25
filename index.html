@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <script>
+    // ปิดการซูมทุกแบบบนมือถือ (iPhone Safari ไม่สนใจ user-scalable=no ต้องกันด้วย JS)
+    (function () {
+      var stop = function (e) { e.preventDefault(); };
+      document.addEventListener('gesturestart', stop, { passive: false });
+      document.addEventListener('gesturechange', stop, { passive: false });
+      document.addEventListener('gestureend', stop, { passive: false });
+      document.addEventListener('touchmove', function (e) {
+        if (e.touches.length > 1 || (e.scale && e.scale !== 1)) e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('dblclick', stop, { passive: false });
+    })();
+  </script>
+  <title>กระปุกปลดหนี้</title>
+  <meta name="theme-color" content="#FFE89A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ปลดหนี้">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+  <noscript>ต้องเปิด JavaScript เพื่อใช้งานกระปุกปลดหนี้</noscript>
+  <script>
+    // กันหน้าว่าง: ถ้าโค้ดแอปโหลดไม่สำเร็จ ให้แสดงข้อความพร้อมปุ่ม "โหลดใหม่"
+    // (Phase 4 จะเพิ่มการล้างแคชของ sw.js ก่อนรีเฟรชแบบ salary-calc)
+    (function () {
+      function showLoadError() {
+        if (window.__appStarted || document.getElementById('boot-fail')) return;
+        var app = document.getElementById('app');
+        if (!app || app.childElementCount) return;
+        app.innerHTML =
+          '<main id="boot-fail"><h1>กระปุกปลดหนี้</h1>' +
+          '<p>โหลดแอปไม่สำเร็จ กดโหลดใหม่อีกครั้ง</p>' +
+          '<button type="button" id="boot-reload">โหลดใหม่</button></main>';
+        document.getElementById('boot-reload').onclick = function () { location.reload(); };
+      }
+      window.addEventListener('error', function () { setTimeout(showLoadError, 0); });
+      window.addEventListener('load', function () { setTimeout(showLoadError, 8000); });
+    })();
+  </script>
+  <script type="module" src="js/app.js" onerror="setTimeout(function(){window.dispatchEvent(new Event('error'))},0)"></script>
+</body>
+</html>
